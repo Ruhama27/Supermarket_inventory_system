@@ -1,0 +1,24 @@
+## Visual Studio temporary and user files
+.vs/
+*.user
+*.userosscache
+*.suo
+*.sln.docstates
+
+## Build results
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+
+## Application Logs
+logs/
+*.log
+
+## OS generated files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
