@@ -1,137 +1,166 @@
-# Stock-Sync — Inventory Management System (Desktop Application)
+# Stock-Sync — Supermarket Inventory & POS Management System
 
-A desktop-based inventory and billing system built for small and medium retail shops, developed with C# Windows Forms and Microsoft SQL Server. Stock-Sync replaces manual registers and spreadsheets with a structured, database-driven workflow — covering product management, barcode-based billing, automatic stock updates, and real-time alerts for low stock and expired items.
+[![.NET Framework](https://img.shields.io/badge/.NET%20Framework-4.7.2-512BD4?style=for-the-badge&logo=dotnet&logoColor=white)](https://dotnet.microsoft.com/)
+[![C#](https://img.shields.io/badge/C%23-239120?style=for-the-badge&logo=csharp&logoColor=white)](https://learn.microsoft.com/dotnet/csharp/)
+[![SQL Server](https://img.shields.io/badge/Microsoft%20SQL%20Server-CC2927?style=for-the-badge&logo=microsoftsqlserver&logoColor=white)](https://www.microsoft.com/sql-server)
+[![Windows Forms](https://img.shields.io/badge/Windows%20Forms-Desktop-0078D7?style=for-the-badge&logo=windows&logoColor=white)](https://learn.microsoft.com/dotnet/desktop/winforms/)
+[![Bilingual](https://img.shields.io/badge/Language-English%20%7C%20%E1%8X%80%E1%88%9B%E1%88%AD%E1%8A%9B-0D9488?style=for-the-badge)](https://github.com/Ruhama27/Supermarket_inventory_system)
 
-The project was inspired by **Barcode to PC**, a mobile barcode-scanning app that sends scanned barcode data directly to a connected computer — integrated here to make product entry and billing fast during checkout.
+A modern, production-grade Supermarket Inventory Management and Point-of-Sale (POS) desktop application built with **C# Windows Forms** and **Microsoft SQL Server**. 
 
-## Class Diagram
+Stock-Sync streamlines retail operations by combining barcode scanning, multi-batch FIFO inventory tracking, real-time analytics, thermal receipt generation, and **bilingual English & Amharic (አማርኛ)** localization inside a clean, modern SaaS dashboard.
 
-The diagram below outlines the application's class structure — including the `IDataOperations` interface implemented by core model classes, and how the Product, Stock, Bill, and other entities relate to one another.
+---
 
-![Class Diagram](class%20diagram.jpg)
+## 📸 Interface Preview
 
-## Preview
+| Login Screen | Products Management |
+| :---: | :---: |
+| ![Login Screen](login.jpg) | ![Products Management](products.jpg) |
 
-![Login Screen](login.jpg)
+| Sales Analytics | Class Architecture Diagram |
+| :---: | :---: |
+| ![Sales Analytics](graph.jpg) | ![Class Diagram](class%20diagram.jpg) |
 
-![Products Management](products.jpg)
+---
 
-![Sales Analytics](graph.jpg)
+## ✨ Key Features & Improvements
 
-## Key Features
+### 🎨 Modern SaaS Dashboard UI
+- **Single-Window Application Shell**: Eliminates scattered popup windows in favor of a cohesive, modern layout inspired by cloud SaaS applications.
+- **Dark Slate Navy Sidebar (`#142936`)**: Ergonomic navigation with active state pills (`#E3EDF3`) and smooth transitions.
+- **Clean Typography & Card Containers**: Crisp Segoe UI typography, elevated white card containers (`#FFFFFF`), and soft-contrast slate backgrounds (`#EEF3F6`).
+- **7 Integrated Views**:
+  1. **Orders Screen**: Complete invoice history with status badges (`Completed`, `Pending`, `Cancelled`), date range picker, and pagination footer.
+  2. **Point of Sale (POS)**: Real-time barcode scanning, dynamic cart grid, subtotal/tax calculation, cash received/change due calculator, and thermal receipt generation.
+  3. **Products Catalog**: Full CRUD operations with soft-delete deactivation and real-time search.
+  4. **Stock Batches**: Multi-batch inventory tracking with batch codes, cost price, selling price, arrival dates, and expiry date warnings.
+  5. **Dashboard Analytics**: Executive overview with real-time KPI cards (Today's Sales, Today's Invoices, Active Products, Low Stock Alerts) and interactive column/bar charts.
+  6. **Daily Sales Reports**: Instant date-filtered reporting with export capabilities.
+  7. **System Alerts**: Live monitoring for low stock items, expired batches, and never-sold inventory.
 
-- Barcode scanning via the Barcode to PC mobile app for fast product entry
-- Full product and stock management — add, update, delete, and search records
-- Billing system with cart handling, subtotal calculation, cash received, and change returned
-- Automatic stock deduction after every completed sale
-- Real-time alerts for low stock, expired products, and never-sold items
-- Visual sales analytics with charts for daily sales and top-performing products
-- Role-based access control separating Admin and Staff permissions
-- Search and filter tools across products, stock, and sales records
-- Audit logging that automatically tracks product and stock changes
+### 🌐 Bilingual Language Support (English & አማርኛ)
+- **One-Click Language Switcher**: Toggle dynamically between **English** and **Amharic (አማርኛ)** using the `🌐 አማርኛ` / `🌐 English` button in the top header.
+- **Zero-Restart Live Translation**: Instantly re-renders navigation, screen titles, breadcrumb paths, card headers, form labels, dialog messages, and DataGridView table headers without restarting the application.
+- **Full Ge'ez Ethiopic Script Coverage**: Native Ethiopic Unicode characters for natural, accessible operation in retail stores and supermarkets in Ethiopia.
 
-## User Roles
+### 🔒 Enterprise-Grade Security
+- **PBKDF2 Password Hashing**: Implements industry-standard `Rfc2898DeriveBytes` with **10,000 iterations**, a **128-bit cryptographic salt**, and a **256-bit derived key**.
+- **Constant-Time Comparison**: Protects authentication against timing attack vulnerabilities.
+- **Transparent Migration**: Seamlessly upgrades legacy plaintext user passwords to salted PBKDF2 hashes on successful login.
+- **Role-Based Access Control (RBAC)**: Distinguishes between **Admin** (complete system authority) and **Staff Cashier** (POS, sales, and catalog views).
 
-- **Admin** — Full system control: manages products, users, reports, alerts, and all database-related activity
-- **Staff** — Restricted to daily shop operations: managing products and creating bills, with access limited to sales-related screens
+### 📦 Multi-Batch FIFO/FEFO Stock Tracking
+- **Multi-Batch Deduction**: Sales automatically deplete stock across multiple batches using First-In-First-Out (FIFO) or First-Expired-First-Out (FEFO).
+- **Concurrency & Transaction Safety**: Utilizes database transactions with `WITH (UPDLOCK, ROWLOCK)` hints to eliminate race conditions and negative inventory discrepancies under heavy retail checkout traffic.
+- **Soft Delete Support**: `IsActive` flag ensures discontinued products maintain referential integrity with historical invoices and receipts.
 
-## System Architecture
+### 📊 Export & Audit Infrastructure
+- **One-Click CSV Export**: Easily export Order History, Products Catalog, Stock Batches, and Daily Sales to CSV spreadsheets.
+- **Application File Logger**: Tracks startup events, authentications, stock deductions, and runtime warnings to `logs/stock_sync.log`.
+- **Database Audit Triggers**: SQL Server triggers automatically record changes to `Products` and `Stocks` into an immutable `AuditLog` table.
 
-Stock-Sync follows a client-database model. The Windows Forms application acts as the client, sending requests whenever a user searches a product, saves a sale, updates stock, or logs in. SQL Server processes each request and returns the result to the client — the same client-to-database-and-back flow is used for every insert, update, delete, and fetch operation across the app.
+---
 
-**Example flow:** scanning a barcode sends the barcode value to SQL Server, which looks up the matching product and returns its name, price, and current stock to the billing screen.
+## 🏗️ System Architecture
 
-## Database Design
+```
+Stock_Sync Solution
+├── App.config                     # Centralized connection strings & settings
+├── Program.cs                     # Global exception handling & application entry point
+├── DBHelper.cs                    # Centralized ADO.NET connection manager
+├── LocalizationManager.cs         # English & Amharic translation dictionaries & event bus
+├── UITheme.cs                     # Centralized color palettes, fonts, and data grid styling
+├── SecurityHelper.cs              # PBKDF2 salt/hash security module
+├── Logger.cs                      # File-based logging utility (logs/stock_sync.log)
+├── CsvExportHelper.cs             # Generic CSV exporter for DataTables & DataGridViews
+│
+├── Models & Business Logic
+│   ├── Session.cs                 # Static session context (User ID, Email, Role)
+│   ├── Login.cs                   # Authentication with auto-hashing migration
+│   ├── Product.cs                 # Product management & search logic
+│   ├── Stock.cs                   # Stock batch operations & threshold checks
+│   ├── Bill.cs / BillItem.cs      # Multi-batch FIFO checkout & order persistence
+│   ├── Report.cs                  # KPI aggregations & date-filtered sales data
+│   ├── Chart.cs                   # Analytics charting data providers
+│   └── Notification.cs            # Low stock, expired, and dead stock queries
+│
+└── User Interface
+    ├── LoginForm.cs               # Bilingual login form with role routing
+    └── MainDashboardForm.cs       # Modern unified shell hosting all 7 sub-views
+```
 
-**Database:** Microsoft SQL Server, chosen for its reliability, strong support for structured relational data, and smooth integration with C# via `System.Data.SqlClient`.
+---
 
-**Core Tables:**
+## 🗄️ Database Design
 
-| Table | Purpose |
+**Database Engine**: Microsoft SQL Server (`.\SQLEXPRESS`)
+
+### Core Tables & Views
+| Entity | Description |
 |---|---|
-| `Users` | Login credentials and role assignment (Admin / Staff) |
-| `Products` | Product name, barcode, category, and status |
-| `Stocks` | Quantity, minimum stock threshold, cost/sale price, arrival and expiry dates |
-| `Orders` | Bill-level data — date, subtotal, total payable, cash received, change returned |
-| `OrderDetails` | Line-item details for each bill |
-| `AuditLog` | Automatically logged messages and timestamps for product/stock changes |
+| `Users` | User credentials, roles (`Admin` / `Staff`), and PBKDF2 password hashes |
+| `Products` | Master product catalog, barcodes, categories, and `IsActive` soft-delete flag |
+| `Stocks` | Batch inventory, quantities, minimum thresholds, cost/selling prices, arrival & expiry dates |
+| `Orders` | Invoices with subtotal, tax, discount, cash received, change due, and cashier reference |
+| `OrderDetails` | Line-item details mapping orders to products and quantities |
+| `AuditLog` | Automated trigger-based log tracking product and stock modifications |
+| `Stock` *(View)* | Aggregated view joining `Products` and `Stocks` for quick catalog inspection |
 
-**Database concepts applied:**
-- `SELECT`, `INSERT`, `UPDATE`, `DELETE` for core record management
-- `INNER JOIN` to combine related data across tables
-- `GROUP BY` and `ORDER BY` for sales and stock reporting
-- Aggregate functions — `SUM`, `COUNT`, `AVG`, `MAX`, `MIN` — for reports and charts
-- `LIKE` for partial-text search across products and users
-- Subqueries used in the billing and notification modules
-- **Triggers** (`trg_Products_Audit`, `trg_Stocks_Audit`) — automatically log insert/update/delete activity on Products and Stocks
-- **Stored procedures** (`sp_GetLowStockProducts`, `sp_GetExpiredProducts`, `sp_GetNeverSoldItems`, `sp_GetRecentAuditLogs`) — encapsulate recurring queries for alerts and reporting
+---
 
-## Built With
+## 🚀 Getting Started
 
-<p>
-  <img src="https://skillicons.dev/icons?i=cs,dotnet,visualstudio" />
-  <img src="https://img.shields.io/badge/SQL%20Server-CC2927?style=for-the-badge&logo=microsoftsqlserver&logoColor=white" />
-</p>
+### Prerequisites
+- **Operating System**: Windows 10 or Windows 11
+- **.NET Framework**: Version 4.7.2 or higher
+- **Database**: Microsoft SQL Server (LocalDB, Express, or Standard)
+- **IDE** *(optional for development)*: Visual Studio 2022 / 2019 with *.NET desktop development* workload
 
-- **C#** — Application logic and object-oriented design
-- **Windows Forms (.NET)** — Desktop user interface
-- **Microsoft SQL Server** — Relational database, triggers, and stored procedures
-- **System.Data.SqlClient** — Database connectivity layer
-- **Visual Studio** — Development environment
-- **Barcode to PC** — Mobile barcode scanning integration
+---
 
-## Project Structure
+### Installation & Setup
 
-```
-Inventory-Management-System-Desktop-Application/
-├── SQLQueryForProj.sql          # Full database schema, triggers, and stored procedures
-├── Stock_Sync/
-│   ├── Stock_Sync.sln            # Visual Studio solution file
-│   └── Stock_Sync/
-│       ├── IDataOperations.cs       # Core interface defining Add / Update / Delete / Fetch operations
-│       ├── DBHelper.cs               # Centralized SQL Server connection handler
-│       ├── Session.cs                # Static session state (logged-in email and role)
-│       ├── Product.cs                # Product model, implements IDataOperations
-│       ├── Stock.cs                  # Stock model and stock-level logic
-│       ├── Bill.cs / BillItem.cs     # Billing logic and cart line items
-│       ├── Notification.cs           # Low stock / expired / never-sold alert logic
-│       ├── Report.cs                 # Sales report data logic
-│       ├── Chart.cs                  # Sales analytics and chart data
-│       ├── Login.cs                  # Authentication logic
-│       ├── LoginForm.cs              # Login & role selection screen
-│       ├── ProductsForm.cs           # Product management screen
-│       ├── StockForm.cs              # Stock management screen
-│       ├── BillForm.cs               # Billing and invoice screen
-│       ├── NotificationForm.cs       # Alerts screen
-│       ├── ChartsFormcs.cs           # Sales charts screen
-│       ├── ReportForm.cs             # Sales reports screen
-│       └── Program.cs                # Application entry point
-├── class diagram.jpg             # UML class diagram
-├── graph.jpg                     # Sales analytics screenshot
-├── login.jpg                     # Login screen screenshot
-└── products.jpg                  # Product management screenshot
-```
-
-## Getting Started
-
-Clone the repository:
-
+#### 1. Clone the Repository
 ```bash
-git clone https://github.com/AbdulRehman2345/Inventory-Management-System-Desktop-Application.git
+git clone https://github.com/Ruhama27/Supermarket_inventory_system.git
+cd Supermarket_inventory_system
 ```
 
-1. Open `Stock_Sync/Stock_Sync.sln` in Visual Studio
-2. Run `SQLQueryForProj.sql` against a local SQL Server instance to create the `InventoryDB` database, tables, triggers, and stored procedures
-3. Update the connection string in `DBHelper.cs` to match your SQL Server instance name
-4. Build and run the application
+#### 2. Initialize the Database
+Open **SQL Server Management Studio (SSMS)** or SQLCMD and run the database setup script against your SQL Server instance:
+- Execute [`setup_database.sql`](setup_database.sql) — Creates `InventoryDB`, tables, triggers, stored procedures, and pre-seeded sample data.
+- *(If updating an existing database, run [`upgrade_database.sql`](upgrade_database.sql) to add the latest columns and constraints).*
 
+#### 3. Configure Connection String
+Verify your SQL Server instance name in [`Stock_Sync/Stock_Sync/App.config`](Stock_Sync/Stock_Sync/App.config):
+```xml
+<connectionStrings>
+    <add name="StockSyncDB" 
+         connectionString="Data Source=.\SQLEXPRESS;Initial Catalog=InventoryDB;Integrated Security=True;Encrypt=False" 
+         providerName="System.Data.SqlClient" />
+</connectionStrings>
+```
 
-## Author
+#### 4. Build and Run
+- **Option A (One-Click Launcher)**: Double-click [`Run-StockSync.bat`](Run-StockSync.bat).
+- **Option B (Visual Studio)**: Open `Stock_Sync/Stock_Sync.sln`, press `F5` or `Ctrl+F5` to build and run.
+- **Option C (CLI)**:
+  ```powershell
+  msbuild Stock_Sync\Stock_Sync.sln /p:Configuration=Debug
+  .\Stock_Sync\Stock_Sync\bin\Debug\Stock_Sync.exe
+  ```
 
-**Abdul Rehman** — Software Engineer
+---
 
-[LinkedIn](https://www.linkedin.com/in/abdul-rehman-750208312)
+## 🔑 Default Login Credentials
 
-## License
+| Role | Email | Password | Access Level |
+|---|---|---|---|
+| **Admin** | `admin@gmail.com` | `admin123` | Full access (Products, Stock, Orders, Reports, Analytics, Alerts) |
+| **Staff** | `staff@gmail.com` | `staff123` | Operational access (POS Checkout, Cart, Products, Orders) |
 
-This project is open source and available for reference. Feel free to explore the code.
+---
+
+## 📄 License
+This project is open-source and available under the standard MIT License. Feel free to use, modify, and distribute it for personal, academic, or commercial inventory systems.
