@@ -215,7 +215,7 @@ namespace Stock_Sync
                 LocalizationManager.OnLanguageChanged -= ApplyLanguage;
                 clockTimer?.Dispose();
                 printDoc?.Dispose();
-                MobileServer.Stop();
+                // Note: MobileServer is kept running in background for Admin mobile access
             }
             base.Dispose(disposing);
         }
@@ -561,7 +561,7 @@ namespace Stock_Sync
             btnNotificationBadge.FlatAppearance.BorderSize = 0;
             btnNotificationBadge.Click += (s, e) => SwitchView(ScreenType.Alerts);
 
-            // Phone Live Access Button (Mobile Web Dashboard)
+            // Phone Live Access Button (Mobile Web Dashboard - Strictly restricted to Admin)
             btnMobileAccess = new Button
             {
                 Text = LocalizationManager.CurrentLanguage == AppLanguage.Amharic ? "📱 የስልክ መዳረሻ" : "📱 Phone Live",
@@ -572,7 +572,8 @@ namespace Stock_Sync
                 BackColor = Color.FromArgb(238, 242, 255),
                 ForeColor = Color.FromArgb(79, 70, 229),
                 Font = new Font("Segoe UI", 9F, FontStyle.Bold),
-                Cursor = Cursors.Hand
+                Cursor = Cursors.Hand,
+                Visible = Session.IsAdmin
             };
             btnMobileAccess.FlatAppearance.BorderSize = 0;
             btnMobileAccess.Click += (s, e) => ShowMobileAccessDialog();
@@ -627,6 +628,15 @@ namespace Stock_Sync
 
         private void ShowMobileAccessDialog()
         {
+            if (!Session.IsAdmin)
+            {
+                string msg = LocalizationManager.CurrentLanguage == AppLanguage.Amharic
+                    ? "ይቅርታ! የስልክ መዳረሻ የተፈቀደው ለአስተዳዳሪ (Admin) ብቻ ነው።"
+                    : "Access Denied: Mobile Live Dashboard is restricted to Admin accounts only.";
+                MessageBox.Show(msg, "Admin Only", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
             bool isAmh = LocalizationManager.CurrentLanguage == AppLanguage.Amharic;
             string mobileUrl = MobileServer.GetMobileUrl();
             string localhostUrl = MobileServer.GetLocalhostUrl();
@@ -898,9 +908,10 @@ namespace Stock_Sync
                 btnLangToggle.Text = LocalizationManager.CurrentLanguage == AppLanguage.English ? "🌐 አማርኛ" : "🌐 English";
             }
 
-            // Mobile Access Button
+            // Mobile Access Button (Visible strictly to Admin)
             if (btnMobileAccess != null)
             {
+                btnMobileAccess.Visible = Session.IsAdmin;
                 btnMobileAccess.Text = LocalizationManager.CurrentLanguage == AppLanguage.Amharic ? "📱 የስልክ መዳረሻ" : "📱 Phone Live";
             }
 
