@@ -139,8 +139,8 @@ Open **SQL Server Management Studio (SSMS)** or SQLCMD and run the database setu
 Verify your SQL Server instance name in [`Stock_Sync/Stock_Sync/App.config`](Stock_Sync/Stock_Sync/App.config):
 ```xml
 <connectionStrings>
-    <add name="StockSyncDB" 
-         connectionString="Data Source=.\SQLEXPRESS;Initial Catalog=InventoryDB;Integrated Security=True;Encrypt=False" 
+    <add name="InventoryDB" 
+         connectionString="Data Source=.\SQLEXPRESS;Initial Catalog=InventoryDB;Integrated Security=True;TrustServerCertificate=True" 
          providerName="System.Data.SqlClient" />
 </connectionStrings>
 ```
@@ -150,18 +150,27 @@ Verify your SQL Server instance name in [`Stock_Sync/Stock_Sync/App.config`](Sto
 - **Option B (Visual Studio)**: Open `Stock_Sync/Stock_Sync.sln`, press `F5` or `Ctrl+F5` to build and run.
 - **Option C (CLI)**:
   ```powershell
-  msbuild Stock_Sync\Stock_Sync.sln /p:Configuration=Debug
-  .\Stock_Sync\Stock_Sync\bin\Debug\Stock_Sync.exe
+  msbuild Stock_Sync\Stock_Sync.sln /p:Configuration=Release
+  .\Stock_Sync\Stock_Sync\bin\Release\Stock_Sync.exe
   ```
+
+---
+
+## 🚀 Deployment
+
+For complete instructions on deploying Stock-Sync across single computers, multi-terminal cashier LAN networks, or cloud database servers, see our **[Deployment Guide](DEPLOYMENT_GUIDE.md)**:
+- **Portable Distribution**: Run `.\package_release.ps1` to produce a standalone ZIP archive.
+- **Windows Installer (`Setup.exe`)**: Compile [`installer_script.iss`](installer_script.iss) using [Inno Setup](https://jrsoftware.org/isdl.php).
+- **Multi-Terminal LAN POS**: Configure central SQL Server with TCP/IP port 1433 and connect multiple cashier terminals.
 
 ---
 
 ## 🔑 Default Login Credentials
 
-| Role | Email | Password | Access Level |
-|---|---|---|---|
-| **Admin** | `admin@gmail.com` | `admin123` | Full access (Products, Stock, Orders, Reports, Analytics, Alerts) |
-| **Staff** | `staff@gmail.com` | `staff123` | Operational access (POS Checkout, Cart, Products, Orders) |
+| Role | Username | Email | Password | Access Level |
+|---|---|---|---|---|
+| **Admin** | `admin` | `admin@gmail.com` | `admin123` | Full access (Products, Stock, Orders, Reports, Analytics, Alerts) |
+| **Staff** | `staff` | `staff@gmail.com` | `staff123` | Operational access (POS Checkout, Cart, Products, Orders) |
 
 ---
 

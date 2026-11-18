@@ -12,6 +12,8 @@
 [Rr]elease/
 x64/
 x86/
+dist/
+*.zip
 
 ## Application Logs
 logs/
