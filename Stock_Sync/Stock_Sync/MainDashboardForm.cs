@@ -615,6 +615,19 @@ namespace Stock_Sync
             if (btnCompleteSale != null) btnCompleteSale.Text = LocalizationManager.T("CompleteSale");
             if (btnPrintReceipt != null) btnPrintReceipt.Text = LocalizationManager.T("PrintReceipt");
 
+            // Re-render POS amounts with active currency notation
+            decimal curTotal = activeBill.CalculateSubtotal();
+            if (lblPosSubtotal != null) lblPosSubtotal.Text = LocalizationManager.FormatMoney(curTotal);
+            if (lblPosTotal != null) lblPosTotal.Text = LocalizationManager.FormatMoney(curTotal);
+            if (txtPosCashReceived != null && decimal.TryParse(txtPosCashReceived.Text, out decimal cReceived))
+            {
+                if (lblPosChange != null) lblPosChange.Text = LocalizationManager.FormatMoney(cReceived - curTotal);
+            }
+            else
+            {
+                if (lblPosChange != null) lblPosChange.Text = LocalizationManager.FormatMoney(0m);
+            }
+
             // View 3: Products
             if (btnProductSearch != null) btnProductSearch.Text = LocalizationManager.T("Search");
             if (btnProductExport != null) btnProductExport.Text = LocalizationManager.T("ExportCsv");
@@ -663,6 +676,12 @@ namespace Stock_Sync
             LocalizeGridHeaders(dgvProducts);
             LocalizeGridHeaders(dgvStock);
             LocalizeGridHeaders(dgvReports);
+
+            // Invalidate grids so custom cell formatting re-renders in active currency notation
+            dgvOrders?.Invalidate();
+            dgvCart?.Invalidate();
+            dgvStock?.Invalidate();
+            dgvReports?.Invalidate();
         }
 
         private void LocalizeGridHeaders(DataGridView dgv)
@@ -699,6 +718,9 @@ namespace Stock_Sync
                     case "Cashier": col.HeaderText = LocalizationManager.T("ColCashier"); break;
                     case "Date": col.HeaderText = LocalizationManager.T("ColDate"); break;
                     case "Total Amount": col.HeaderText = LocalizationManager.T("ColTotal"); break;
+                    case "Total Payable": col.HeaderText = LocalizationManager.T("TotalPayable").TrimEnd(':'); break;
+                    case "Cash Received": col.HeaderText = LocalizationManager.T("ColCashReceived"); break;
+                    case "Change Returned": col.HeaderText = LocalizationManager.T("ColChangeReturned"); break;
                 }
             }
         }
@@ -880,7 +902,7 @@ namespace Stock_Sync
                 {
                     if (decimal.TryParse(e.Value.ToString(), out decimal val))
                     {
-                        e.Value = val.ToString("C");
+                        e.Value = LocalizationManager.FormatMoney(val);
                     }
                 }
             };
@@ -1036,13 +1058,13 @@ namespace Stock_Sync
             Panel pnlAmounts = new Panel { Dock = DockStyle.Top, Height = 250, BackColor = UITheme.CardBg };
 
             lblSubTitle = new Label { Text = LocalizationManager.T("Subtotal"), Location = new Point(0, 15), Font = UITheme.FontRegular, ForeColor = UITheme.TextMuted, AutoSize = true };
-            lblPosSubtotal = new Label { Text = "$0.00", Location = new Point(180, 15), Font = UITheme.FontBold, ForeColor = UITheme.TextMain, AutoSize = true };
+            lblPosSubtotal = new Label { Text = LocalizationManager.FormatMoney(0m), Location = new Point(180, 15), Font = UITheme.FontBold, ForeColor = UITheme.TextMain, AutoSize = true };
 
             lblTaxTitle = new Label { Text = LocalizationManager.T("Tax"), Location = new Point(0, 45), Font = UITheme.FontRegular, ForeColor = UITheme.TextMuted, AutoSize = true };
-            Label lblTaxVal = new Label { Text = "$0.00", Location = new Point(180, 45), Font = UITheme.FontBold, ForeColor = UITheme.TextMain, AutoSize = true };
+            Label lblTaxVal = new Label { Text = LocalizationManager.FormatMoney(0m), Location = new Point(180, 45), Font = UITheme.FontBold, ForeColor = UITheme.TextMain, AutoSize = true };
 
             lblPayableTitle = new Label { Text = LocalizationManager.T("TotalPayable"), Location = new Point(0, 85), Font = new Font("Segoe UI", 12F, FontStyle.Bold), ForeColor = UITheme.Primary, AutoSize = true };
-            lblPosTotal = new Label { Text = "$0.00", Location = new Point(180, 85), Font = new Font("Segoe UI", 14F, FontStyle.Bold), ForeColor = UITheme.Primary, AutoSize = true };
+            lblPosTotal = new Label { Text = LocalizationManager.FormatMoney(0m), Location = new Point(180, 85), Font = new Font("Segoe UI", 14F, FontStyle.Bold), ForeColor = UITheme.Primary, AutoSize = true };
 
             lblCashTitle = new Label { Text = LocalizationManager.T("CashReceived"), Location = new Point(0, 135), Font = UITheme.FontBold, ForeColor = UITheme.TextMain, AutoSize = true };
             txtPosCashReceived = new TextBox { Location = new Point(0, 160), Width = 260, Font = new Font("Segoe UI", 12F) };
@@ -1051,12 +1073,16 @@ namespace Stock_Sync
                 if (decimal.TryParse(txtPosCashReceived.Text, out decimal cash))
                 {
                     decimal sub = activeBill.CalculateSubtotal();
-                    lblPosChange.Text = (cash - sub).ToString("C");
+                    lblPosChange.Text = LocalizationManager.FormatMoney(cash - sub);
+                }
+                else
+                {
+                    lblPosChange.Text = LocalizationManager.FormatMoney(0m);
                 }
             };
 
             lblChangeTitle = new Label { Text = LocalizationManager.T("ChangeDue"), Location = new Point(0, 205), Font = UITheme.FontBold, ForeColor = UITheme.TextMain, AutoSize = true };
-            lblPosChange = new Label { Text = "$0.00", Location = new Point(180, 205), Font = new Font("Segoe UI", 12F, FontStyle.Bold), ForeColor = UITheme.Success, AutoSize = true };
+            lblPosChange = new Label { Text = LocalizationManager.FormatMoney(0m), Location = new Point(180, 205), Font = new Font("Segoe UI", 12F, FontStyle.Bold), ForeColor = UITheme.Success, AutoSize = true };
 
             pnlAmounts.Controls.AddRange(new Control[] { lblSubTitle, lblPosSubtotal, lblTaxTitle, lblTaxVal, lblPayableTitle, lblPosTotal, lblCashTitle, txtPosCashReceived, lblChangeTitle, lblPosChange });
 
@@ -1091,7 +1117,7 @@ namespace Stock_Sync
                 decimal payable = activeBill.CalculateSubtotal();
                 if (cashReceived < payable)
                 {
-                    MessageBox.Show($"{LocalizationManager.T("MsgInsufficientCash")} ({cashReceived:C} < {payable:C})", LocalizationManager.T("MsgPaymentErrorTitle"), MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    MessageBox.Show($"{LocalizationManager.T("MsgInsufficientCash")} ({LocalizationManager.FormatMoney(cashReceived)} < {LocalizationManager.FormatMoney(payable)})", LocalizationManager.T("MsgPaymentErrorTitle"), MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     return;
                 }
 
@@ -1106,7 +1132,7 @@ namespace Stock_Sync
                     lastCheckoutCash = cashReceived;
                     lastCheckoutChange = changeDue;
 
-                    string promptText = string.Format(LocalizationManager.T("MsgSaleCompleted"), orderId, changeDue.ToString("C"));
+                    string promptText = string.Format(LocalizationManager.T("MsgSaleCompleted"), orderId, LocalizationManager.FormatMoney(changeDue));
                     DialogResult res = MessageBox.Show(promptText, LocalizationManager.T("MsgCheckoutSuccessTitle"), MessageBoxButtons.YesNo, MessageBoxIcon.Information);
                     
                     activeBill.Clear();
@@ -1155,19 +1181,23 @@ namespace Stock_Sync
                 Barcode = i.Product.PBarcode,
                 Name = i.Product.PName,
                 Quantity = i.Quantity,
-                Price = i.Price.ToString("C"),
-                Total = i.Total.ToString("C")
+                Price = LocalizationManager.FormatMoney(i.Price),
+                Total = LocalizationManager.FormatMoney(i.Total)
             }).ToList();
 
             LocalizeGridHeaders(dgvCart);
 
             decimal total = activeBill.CalculateSubtotal();
-            lblPosSubtotal.Text = total.ToString("C");
-            lblPosTotal.Text = total.ToString("C");
+            lblPosSubtotal.Text = LocalizationManager.FormatMoney(total);
+            lblPosTotal.Text = LocalizationManager.FormatMoney(total);
 
             if (decimal.TryParse(txtPosCashReceived.Text, out decimal cash))
             {
-                lblPosChange.Text = (cash - total).ToString("C");
+                lblPosChange.Text = LocalizationManager.FormatMoney(cash - total);
+            }
+            else
+            {
+                lblPosChange.Text = LocalizationManager.FormatMoney(0m);
             }
         }
 
@@ -1197,18 +1227,19 @@ namespace Stock_Sync
             foreach (var item in items)
             {
                 string name = item.Product.PName;
-                if (name.Length > 18) name = name.Substring(0, 18);
-                sb.AppendLine($"{name,-19} {item.Quantity,3}  {item.Price,7:C}  {item.Total,8:C}");
+                if (name.Length > 16) name = name.Substring(0, 16);
+                sb.AppendLine($"{name,-17} {item.Quantity,3}  {LocalizationManager.FormatMoney(item.Price),10}  {LocalizationManager.FormatMoney(item.Total),10}");
             }
             sb.AppendLine("===========================================");
-            sb.AppendLine($"Subtotal:                       {total,11:C}");
-            sb.AppendLine($"Tax (0%):                       {"$0.00",11}");
-            sb.AppendLine($"TOTAL PAYABLE:                  {total,11:C}");
+            sb.AppendLine($"Subtotal:                       {LocalizationManager.FormatMoney(total),15}");
+            sb.AppendLine($"Tax (0%):                       {LocalizationManager.FormatMoney(0m),15}");
+            sb.AppendLine($"TOTAL PAYABLE:                  {LocalizationManager.FormatMoney(total),15}");
             sb.AppendLine("-------------------------------------------");
-            sb.AppendLine($"Cash Received:                  {cash,11:C}");
-            sb.AppendLine($"Change Due:                     {change,11:C}");
+            sb.AppendLine($"Cash Received:                  {LocalizationManager.FormatMoney(cash),15}");
+            sb.AppendLine($"Change Due:                     {LocalizationManager.FormatMoney(change),15}");
             sb.AppendLine("===========================================");
             sb.AppendLine("        THANK YOU FOR SHOPPING WITH US!    ");
+            sb.AppendLine("             አመሰግናለሁ! እንኳን ደህና መጡ!         ");
             sb.AppendLine();
 
             receiptText = sb.ToString();
@@ -1458,6 +1489,16 @@ namespace Stock_Sync
 
             dgvStock = new DataGridView { Dock = DockStyle.Fill };
             UITheme.StyleDataGrid(dgvStock);
+            dgvStock.CellFormatting += (s, e) =>
+            {
+                if ((dgvStock.Columns[e.ColumnIndex].Name == "Cost Price/Unit" || dgvStock.Columns[e.ColumnIndex].Name == "Selling Price/Unit") && e.Value != null)
+                {
+                    if (decimal.TryParse(e.Value.ToString(), out decimal val))
+                    {
+                        e.Value = LocalizationManager.FormatMoney(val);
+                    }
+                }
+            };
             dgvStock.CellClick += (s, e) =>
             {
                 if (e.RowIndex >= 0)
@@ -1586,7 +1627,7 @@ namespace Stock_Sync
             lblKpiTitle3 = new Label();
             lblKpiTitle4 = new Label();
 
-            tlpKpis.Controls.Add(CreateKpiCard(LocalizationManager.T("KpiTodaySales"), "$0.00", lblKpiTodaySales, lblKpiTitle1, Color.FromArgb(16, 185, 129)), 0, 0);
+            tlpKpis.Controls.Add(CreateKpiCard(LocalizationManager.T("KpiTodaySales"), LocalizationManager.FormatMoney(0m), lblKpiTodaySales, lblKpiTitle1, Color.FromArgb(16, 185, 129)), 0, 0);
             tlpKpis.Controls.Add(CreateKpiCard(LocalizationManager.T("KpiTodayOrders"), "0", lblKpiTodayOrders, lblKpiTitle2, UITheme.Primary), 1, 0);
             tlpKpis.Controls.Add(CreateKpiCard(LocalizationManager.T("KpiActiveProducts"), "0", lblKpiActiveProducts, lblKpiTitle3, Color.FromArgb(99, 102, 241)), 2, 0);
             tlpKpis.Controls.Add(CreateKpiCard(LocalizationManager.T("KpiLowStock"), "0", lblKpiLowStock, lblKpiTitle4, Color.FromArgb(239, 68, 68)), 3, 0);
@@ -1647,7 +1688,7 @@ namespace Stock_Sync
         private void LoadDashboardData()
         {
             var kpis = Report.GetDashboardKpis();
-            lblKpiTodaySales.Text = kpis.TodaySales.ToString("C");
+            lblKpiTodaySales.Text = LocalizationManager.FormatMoney(kpis.TodaySales);
             lblKpiTodayOrders.Text = kpis.TodayOrders.ToString();
             lblKpiActiveProducts.Text = kpis.TotalProducts.ToString();
             lblKpiLowStock.Text = kpis.LowStockItems.ToString();
@@ -1728,6 +1769,16 @@ namespace Stock_Sync
 
             dgvReports = new DataGridView { Dock = DockStyle.Fill };
             UITheme.StyleDataGrid(dgvReports);
+            dgvReports.CellFormatting += (s, e) =>
+            {
+                if ((dgvReports.Columns[e.ColumnIndex].Name == "Total Payable" || dgvReports.Columns[e.ColumnIndex].Name == "Cash Received" || dgvReports.Columns[e.ColumnIndex].Name == "Change Returned" || dgvReports.Columns[e.ColumnIndex].Name == "Total Amount") && e.Value != null)
+                {
+                    if (decimal.TryParse(e.Value.ToString(), out decimal val))
+                    {
+                        e.Value = LocalizationManager.FormatMoney(val);
+                    }
+                }
+            };
 
             pnlCard.Controls.Add(dgvReports);
             pnlCard.Controls.Add(pnlFilter);

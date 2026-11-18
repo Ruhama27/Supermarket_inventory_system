@@ -93,13 +93,13 @@ namespace Stock_Sync
         private void UpdateSubtotal()
         {
             subtotal = bill.CalculateSubtotal();
-            total.Text = subtotal.ToString("C");
-            sub.Text = subtotal.ToString("C");
+            total.Text = LocalizationManager.FormatMoney(subtotal);
+            sub.Text = LocalizationManager.FormatMoney(subtotal);
 
             // Recalculate change if cash received is already entered
             if (decimal.TryParse(textBox1.Text, out decimal cashReceived))
             {
-                textBox2.Text = Math.Max(0m, cashReceived - subtotal).ToString("C");
+                textBox2.Text = LocalizationManager.FormatMoney(Math.Max(0m, cashReceived - subtotal));
             }
         }
 
@@ -118,7 +118,7 @@ namespace Stock_Sync
 
                 if (decimal.TryParse(textBox1.Text, out decimal cashReceived))
                 {
-                    textBox2.Text = (cashReceived - subtotal).ToString("C");
+                    textBox2.Text = LocalizationManager.FormatMoney(cashReceived - subtotal);
                 }
                 else
                 {
@@ -150,7 +150,7 @@ namespace Stock_Sync
 
                 if (cashReceived < totalPayable)
                 {
-                    MessageBox.Show($"Cash received ({cashReceived:C}) is less than total payable ({totalPayable:C})!", "Payment Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    MessageBox.Show($"Cash received ({LocalizationManager.FormatMoney(cashReceived)}) is less than total payable ({LocalizationManager.FormatMoney(totalPayable)})!", "Payment Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     return;
                 }
 
@@ -173,7 +173,7 @@ namespace Stock_Sync
                     lastOrderDate = DateTime.Now;
 
                     DialogResult printPrompt = MessageBox.Show(
-                        $"Sale #{orderId} completed successfully!\nChange returned: {changeReturned:C}\n\nWould you like to print the receipt now?",
+                        $"Sale #{orderId} completed successfully!\nChange returned: {LocalizationManager.FormatMoney(changeReturned)}\n\nWould you like to print the receipt now?",
                         "Checkout Success",
                         MessageBoxButtons.YesNo,
                         MessageBoxIcon.Information);
@@ -240,8 +240,8 @@ namespace Stock_Sync
         {
             RefreshGrid();
             subtotal = 0m;
-            total.Text = "$0.00";
-            sub.Text = "$0.00";
+            total.Text = LocalizationManager.FormatMoney(0m);
+            sub.Text = LocalizationManager.FormatMoney(0m);
             textBox1.Clear();    // Cash received textbox
             textBox2.Clear();    // Change textbox
             textBox11.Clear();   // Barcode input textbox
@@ -284,20 +284,20 @@ namespace Stock_Sync
             foreach (var item in itemsToPrint)
             {
                 string name = item.Product.PName;
-                if (name.Length > 18) name = name.Substring(0, 18);
-                sb.AppendLine($"{name,-19} {item.Quantity,3}  {item.Price,7:C}  {item.Total,8:C}");
+                if (name.Length > 16) name = name.Substring(0, 16);
+                sb.AppendLine($"{name,-17} {item.Quantity,3}  {LocalizationManager.FormatMoney(item.Price),10}  {LocalizationManager.FormatMoney(item.Total),10}");
             }
 
             sb.AppendLine("===========================================");
-            sb.AppendLine($"Subtotal:                       {printSub,11:C}");
-            sb.AppendLine($"Tax (0%):                       {"$0.00",11}");
-            sb.AppendLine($"TOTAL PAYABLE:                  {printSub,11:C}");
+            sb.AppendLine($"Subtotal:                       {LocalizationManager.FormatMoney(printSub),15}");
+            sb.AppendLine($"Tax (0%):                       {LocalizationManager.FormatMoney(0m),15}");
+            sb.AppendLine($"TOTAL PAYABLE:                  {LocalizationManager.FormatMoney(printSub),15}");
             sb.AppendLine("-------------------------------------------");
-            sb.AppendLine($"Cash Received:                  {printCash,11:C}");
-            sb.AppendLine($"Change Returned:                {printChange,11:C}");
+            sb.AppendLine($"Cash Received:                  {LocalizationManager.FormatMoney(printCash),15}");
+            sb.AppendLine($"Change Returned:                {LocalizationManager.FormatMoney(printChange),15}");
             sb.AppendLine("===========================================");
             sb.AppendLine("        THANK YOU FOR SHOPPING WITH US!    ");
-            sb.AppendLine("          PLEASE VISIT US AGAIN            ");
+            sb.AppendLine("             አመሰግናለሁ! እንኳን ደህና መጡ!         ");
             sb.AppendLine();
 
             printText = sb.ToString();

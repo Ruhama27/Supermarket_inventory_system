@@ -44,6 +44,23 @@ namespace Stock_Sync
             return key;
         }
 
+        /// <summary>
+        /// Formats numeric currency values in Ethiopian Birr (ETB / ብር) according to active language.
+        /// </summary>
+        public static string FormatMoney(decimal amount)
+        {
+            if (CurrentLanguage == AppLanguage.Amharic)
+            {
+                return $"{amount:N2} ብር";
+            }
+            return $"{amount:N2} ETB";
+        }
+
+        public static string FormatMoney(double amount)
+        {
+            return FormatMoney((decimal)amount);
+        }
+
         // English Translations
         private static readonly Dictionary<string, string> englishTranslations = new Dictionary<string, string>
         {
@@ -98,10 +115,12 @@ namespace Stock_Sync
             { "Subtotal", "Subtotal:" },
             { "Tax", "Tax / VAT (0%):" },
             { "TotalPayable", "Total Payable:" },
-            { "CashReceived", "Cash Received ($):" },
+            { "CashReceived", "Cash Received (Birr):" },
             { "ChangeDue", "Change Due:" },
             { "CompleteSale", "✔   Complete Sale" },
             { "PrintReceipt", "🖨   Print Receipt" },
+            { "CurrencyUnit", "Birr" },
+            { "CurrencyCode", "ETB" },
 
             // Products
             { "ManageProduct", "Manage Product" },
@@ -119,8 +138,8 @@ namespace Stock_Sync
             { "ProductId", "Product ID:" },
             { "BatchCode", "Batch Code:" },
             { "MinThreshold", "Min Threshold:" },
-            { "CostPrice", "Cost Price ($):" },
-            { "SellingPrice", "Selling Price ($):" },
+            { "CostPrice", "Cost Price (Birr):" },
+            { "SellingPrice", "Selling Price (Birr):" },
             { "ArrivalDate", "Arrival Date:" },
             { "HasExpiryDate", "Has Expiry Date:" },
             { "SaveStockBatch", "Save Stock Batch" },
@@ -145,12 +164,15 @@ namespace Stock_Sync
             { "ColName", "Product Name" },
             { "ColCategory", "Category" },
             { "ColBatchCode", "Batch Code" },
-            { "ColCostPrice", "Cost Price" },
-            { "ColSellingPrice", "Selling Price" },
+            { "ColCostPrice", "Cost Price (Birr)" },
+            { "ColSellingPrice", "Selling Price (Birr)" },
+            { "ColStockValue", "Stock Value (Birr)" },
             { "ColArrivalDate", "Arrival Date" },
             { "ColExpiryDate", "Expiry Date" },
-            { "ColPrice", "Price" },
-            { "ColTotal", "Total" },
+            { "ColPrice", "Price (Birr)" },
+            { "ColTotal", "Total (Birr)" },
+            { "ColCashReceived", "Cash Received (Birr)" },
+            { "ColChangeReturned", "Change Returned (Birr)" },
             { "ColCashier", "Cashier" },
             { "ColDate", "Date" },
             { "ColMinStock", "Min Stock" },
@@ -233,10 +255,12 @@ namespace Stock_Sync
             { "Subtotal", "ድምር:" },
             { "Tax", "ታክስ / ቫት (0%):" },
             { "TotalPayable", "ጠቅላላ ክፍያ:" },
-            { "CashReceived", "የተቀበሉት ጥሬ ገንዘብ:" },
+            { "CashReceived", "የተቀበሉት ጥሬ ገንዘብ (ብር):" },
             { "ChangeDue", "መልስ:" },
             { "CompleteSale", "✔   ሽያጩን አጠናቅቅ" },
             { "PrintReceipt", "🖨   ደረሰኝ አትም" },
+            { "CurrencyUnit", "ብር" },
+            { "CurrencyCode", "ብር" },
 
             // Products
             { "ManageProduct", "ዕቃዎችን ማስተዳደር" },
@@ -254,8 +278,8 @@ namespace Stock_Sync
             { "ProductId", "የዕቃው መለያ (ID):" },
             { "BatchCode", "የባች ኮድ:" },
             { "MinThreshold", "ዝቅተኛ ገደብ:" },
-            { "CostPrice", "የግዢ ዋጋ:" },
-            { "SellingPrice", "የመሸጫ ዋጋ:" },
+            { "CostPrice", "የግዢ ዋጋ (ብር):" },
+            { "SellingPrice", "የመሸጫ ዋጋ (ብር):" },
             { "ArrivalDate", "የደረሰበት ቀን:" },
             { "HasExpiryDate", "የሚያበቃበት ቀን አለው:" },
             { "SaveStockBatch", "ክምችቱን መዝግብ" },
@@ -280,12 +304,15 @@ namespace Stock_Sync
             { "ColName", "የዕቃው ስም" },
             { "ColCategory", "ምድብ" },
             { "ColBatchCode", "የባች ኮድ" },
-            { "ColCostPrice", "የግዢ ዋጋ" },
-            { "ColSellingPrice", "የመሸጫ ዋጋ" },
+            { "ColCostPrice", "የግዢ ዋጋ (ብር)" },
+            { "ColSellingPrice", "የመሸጫ ዋጋ (ብር)" },
+            { "ColStockValue", "ጠቅላላ ዋጋ (ብር)" },
             { "ColArrivalDate", "የደረሰበት ቀን" },
             { "ColExpiryDate", "የሚያበቃበት ቀን" },
-            { "ColPrice", "ዋጋ" },
-            { "ColTotal", "ድምር" },
+            { "ColPrice", "ዋጋ (ብር)" },
+            { "ColTotal", "ድምር (ብር)" },
+            { "ColCashReceived", "የተቀበሉት ጥሬ ገንዘብ (ብር)" },
+            { "ColChangeReturned", "የተመለሰ መልስ (ብር)" },
             { "ColCashier", "ገንዘብ ተቀባይ" },
             { "ColDate", "ቀን" },
             { "ColMinStock", "ዝቅተኛ ክምችት" },
