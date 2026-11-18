@@ -43,6 +43,7 @@ namespace Stock_Sync
         private Button btnNotificationBadge;
         private Button btnLangToggle;
         private Button btnMobileAccess;
+        private Button btnStaffAccounts;
         private Timer clockTimer;
 
         // Sidebar Navigation Buttons
@@ -578,6 +579,23 @@ namespace Stock_Sync
             btnMobileAccess.FlatAppearance.BorderSize = 0;
             btnMobileAccess.Click += (s, e) => ShowMobileAccessDialog();
 
+            // Staff Accounts Management Button (Admin Only)
+            btnStaffAccounts = new Button
+            {
+                Text = LocalizationManager.CurrentLanguage == AppLanguage.Amharic ? "👥 ሰራተኞች" : "👥 Staff Access",
+                Size = new Size(135, 34),
+                Location = new Point(pnlHeader.Width - 500, 16),
+                Anchor = AnchorStyles.Top | AnchorStyles.Right,
+                FlatStyle = FlatStyle.Flat,
+                BackColor = Color.FromArgb(240, 253, 244),
+                ForeColor = Color.FromArgb(22, 163, 74),
+                Font = new Font("Segoe UI", 9F, FontStyle.Bold),
+                Cursor = Cursors.Hand,
+                Visible = Session.IsAdmin
+            };
+            btnStaffAccounts.FlatAppearance.BorderSize = 0;
+            btnStaffAccounts.Click += (s, e) => ShowStaffManagementDialog();
+
             // Language Toggle Button (Pill Styled - Mockup 1)
             btnLangToggle = new Button
             {
@@ -605,12 +623,13 @@ namespace Stock_Sync
                 ForeColor = UITheme.TextMuted,
                 AutoSize = true,
                 Anchor = AnchorStyles.Top | AnchorStyles.Right,
-                Location = new Point(pnlHeader.Width - 530, 24)
+                Location = new Point(pnlHeader.Width - 680, 24)
             };
 
             pnlHeader.Controls.Add(lblScreenTitle);
             pnlHeader.Controls.Add(lblBreadcrumb);
             pnlHeader.Controls.Add(lblClock);
+            pnlHeader.Controls.Add(btnStaffAccounts);
             pnlHeader.Controls.Add(btnMobileAccess);
             pnlHeader.Controls.Add(btnNotificationBadge);
             pnlHeader.Controls.Add(btnLangToggle);
@@ -797,6 +816,241 @@ namespace Stock_Sync
             }
         }
 
+        private void ShowStaffManagementDialog()
+        {
+            if (!Session.IsAdmin)
+            {
+                MessageBox.Show("Access Denied: Staff accounts can only be managed by Admin.", "Admin Only", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            bool isAmh = LocalizationManager.CurrentLanguage == AppLanguage.Amharic;
+
+            using (Form dlg = new Form())
+            {
+                dlg.Text = isAmh ? "የሱፐርማርኬት ሰራተኞች መለያ አስተዳደር" : "Supermarket Staff & Cashier Management";
+                dlg.Size = new Size(680, 520);
+                dlg.StartPosition = FormStartPosition.CenterParent;
+                dlg.FormBorderStyle = FormBorderStyle.FixedDialog;
+                dlg.MaximizeBox = false;
+                dlg.MinimizeBox = false;
+                dlg.BackColor = Color.White;
+
+                // Top Banner
+                Panel topBanner = new Panel
+                {
+                    Dock = DockStyle.Top,
+                    Height = 70,
+                    BackColor = Color.FromArgb(240, 253, 244),
+                    Padding = new Padding(24, 14, 24, 14)
+                };
+                Label lblDlgTitle = new Label
+                {
+                    Text = isAmh ? "👥 የሱፐርማርኬት ሰራተኞች መለያ አስተዳደር" : "👥 Staff & Cashier Account Access",
+                    Font = new Font("Segoe UI", 12.5F, FontStyle.Bold),
+                    ForeColor = Color.FromArgb(22, 163, 74),
+                    AutoSize = true,
+                    Location = new Point(20, 12)
+                };
+                Label lblDlgSub = new Label
+                {
+                    Text = isAmh 
+                        ? "አዲስ ሰራተኛ ሲቀጠሩ ስም እና የይለፍ ቃል በመስጠት በሽያጭ (POS) ላይ እንዲሰሩ ያድርጉ" 
+                        : "Create credentials for cashiers. Give staff their username and password so they can log in and start selling.",
+                    Font = new Font("Segoe UI", 8.5F, FontStyle.Regular),
+                    ForeColor = UITheme.TextMuted,
+                    AutoSize = true,
+                    Location = new Point(22, 38)
+                };
+                topBanner.Controls.Add(lblDlgTitle);
+                topBanner.Controls.Add(lblDlgSub);
+
+                // Add Staff Input Strip
+                GroupBox gbAdd = new GroupBox
+                {
+                    Text = isAmh ? " ➕ አዲስ ሰራተኛ መመዝገቢያ " : " ➕ Register New Staff / Cashier ",
+                    Font = new Font("Segoe UI", 9F, FontStyle.Bold),
+                    ForeColor = UITheme.TextMain,
+                    Location = new Point(24, 85),
+                    Size = new Size(615, 80)
+                };
+
+                Label lblU = new Label { Text = isAmh ? "የመለያ ስም፦" : "Username:", Location = new Point(16, 32), AutoSize = true, Font = new Font("Segoe UI", 8.5F) };
+                TextBox txtUser = new TextBox { Location = new Point(90, 28), Size = new Size(130, 25), Font = new Font("Segoe UI", 9.5F) };
+
+                Label lblP = new Label { Text = isAmh ? "የይለፍ ቃል፦" : "Password:", Location = new Point(235, 32), AutoSize = true, Font = new Font("Segoe UI", 8.5F) };
+                TextBox txtPass = new TextBox { Location = new Point(305, 28), Size = new Size(130, 25), Font = new Font("Segoe UI", 9.5F) };
+
+                Button btnCreate = new Button
+                {
+                    Text = isAmh ? "መለያ ፍጠር" : "Create Staff",
+                    Font = new Font("Segoe UI", 9F, FontStyle.Bold),
+                    BackColor = UITheme.Primary,
+                    ForeColor = Color.White,
+                    FlatStyle = FlatStyle.Flat,
+                    Location = new Point(450, 26),
+                    Size = new Size(150, 30),
+                    Cursor = Cursors.Hand
+                };
+                btnCreate.FlatAppearance.BorderSize = 0;
+
+                gbAdd.Controls.Add(lblU);
+                gbAdd.Controls.Add(txtUser);
+                gbAdd.Controls.Add(lblP);
+                gbAdd.Controls.Add(txtPass);
+                gbAdd.Controls.Add(btnCreate);
+
+                // DataGrid for existing staff
+                DataGridView dgv = new DataGridView
+                {
+                    Location = new Point(24, 180),
+                    Size = new Size(615, 225),
+                    ReadOnly = true,
+                    SelectionMode = DataGridViewSelectionMode.FullRowSelect,
+                    MultiSelect = false,
+                    AllowUserToAddRows = false,
+                    AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill
+                };
+                UITheme.StyleDataGrid(dgv);
+
+                Action loadStaff = () =>
+                {
+                    var staffList = StaffUserManager.GetAllStaffUsers();
+                    dgv.DataSource = null;
+                    dgv.DataSource = staffList;
+                };
+
+                loadStaff();
+
+                btnCreate.Click += (s, e) =>
+                {
+                    if (StaffUserManager.CreateStaff(txtUser.Text, txtPass.Text, out string err))
+                    {
+                        MessageBox.Show(isAmh ? "ሰራተኛው በተሳካ ሁኔታ ተመዝግቧል! አሁን በ POS ላይ መስራት ይችላሉ።" : "Staff account created successfully! They can now log in on the POS.", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        txtUser.Clear();
+                        txtPass.Clear();
+                        loadStaff();
+                    }
+                    else
+                    {
+                        MessageBox.Show(err, "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    }
+                };
+
+                // Bottom actions
+                Button btnReset = new Button
+                {
+                    Text = isAmh ? "🔑 የይለፍ ቃል ቀይር" : "🔑 Reset Password",
+                    Font = new Font("Segoe UI", 8.5F, FontStyle.Bold),
+                    BackColor = Color.FromArgb(241, 245, 249),
+                    ForeColor = UITheme.TextMain,
+                    FlatStyle = FlatStyle.Flat,
+                    Size = new Size(140, 34),
+                    Location = new Point(24, 420),
+                    Cursor = Cursors.Hand
+                };
+                btnReset.FlatAppearance.BorderSize = 0;
+                btnReset.Click += (s, e) =>
+                {
+                    if (dgv.SelectedRows.Count > 0 && dgv.SelectedRows[0].DataBoundItem is StaffUserInfo selected)
+                    {
+                        string newP = PromptInput("Enter new password for " + selected.Username + ":", "Reset Staff Password", "1234");
+                        if (!string.IsNullOrWhiteSpace(newP))
+                        {
+                            if (StaffUserManager.ResetStaffPassword(selected.UserId, newP, out string err))
+                            {
+                                MessageBox.Show("Password updated successfully!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                            }
+                            else
+                            {
+                                MessageBox.Show(err, "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                            }
+                        }
+                    }
+                };
+
+                Button btnDelete = new Button
+                {
+                    Text = isAmh ? "🗑️ ሰርዝ" : "🗑️ Delete Staff",
+                    Font = new Font("Segoe UI", 8.5F, FontStyle.Bold),
+                    BackColor = Color.FromArgb(254, 226, 226),
+                    ForeColor = Color.FromArgb(220, 38, 38),
+                    FlatStyle = FlatStyle.Flat,
+                    Size = new Size(120, 34),
+                    Location = new Point(175, 420),
+                    Cursor = Cursors.Hand
+                };
+                btnDelete.FlatAppearance.BorderSize = 0;
+                btnDelete.Click += (s, e) =>
+                {
+                    if (dgv.SelectedRows.Count > 0 && dgv.SelectedRows[0].DataBoundItem is StaffUserInfo selected)
+                    {
+                        if (MessageBox.Show($"Are you sure you want to remove staff account '{selected.Username}'?", "Confirm Delete", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
+                        {
+                            if (StaffUserManager.DeleteStaff(selected.UserId, out string err))
+                            {
+                                loadStaff();
+                            }
+                            else
+                            {
+                                MessageBox.Show(err, "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                            }
+                        }
+                    }
+                };
+
+                Button btnCloseDlg = new Button
+                {
+                    Text = isAmh ? "ዝጋ" : "Close",
+                    Font = new Font("Segoe UI", 9F, FontStyle.Bold),
+                    BackColor = Color.FromArgb(226, 232, 240),
+                    ForeColor = UITheme.TextMain,
+                    FlatStyle = FlatStyle.Flat,
+                    Size = new Size(100, 34),
+                    Location = new Point(539, 420),
+                    Cursor = Cursors.Hand,
+                    DialogResult = DialogResult.OK
+                };
+                btnCloseDlg.FlatAppearance.BorderSize = 0;
+
+                dlg.Controls.Add(topBanner);
+                dlg.Controls.Add(gbAdd);
+                dlg.Controls.Add(dgv);
+                dlg.Controls.Add(btnReset);
+                dlg.Controls.Add(btnDelete);
+                dlg.Controls.Add(btnCloseDlg);
+                dlg.AcceptButton = btnCloseDlg;
+
+                dlg.ShowDialog(this);
+            }
+        }
+
+        private static string PromptInput(string prompt, string title, string defaultValue = "")
+        {
+            using (Form f = new Form())
+            {
+                f.Text = title;
+                f.Size = new Size(380, 160);
+                f.StartPosition = FormStartPosition.CenterParent;
+                f.FormBorderStyle = FormBorderStyle.FixedDialog;
+                f.MaximizeBox = false;
+                f.MinimizeBox = false;
+                f.BackColor = Color.White;
+
+                Label lbl = new Label { Text = prompt, Location = new Point(20, 15), AutoSize = true, Font = new Font("Segoe UI", 9F) };
+                TextBox tb = new TextBox { Text = defaultValue, Location = new Point(20, 42), Size = new Size(320, 25), Font = new Font("Segoe UI", 10F) };
+                Button btnOk = new Button { Text = "OK", DialogResult = DialogResult.OK, Location = new Point(170, 80), Size = new Size(80, 28), BackColor = UITheme.Primary, ForeColor = Color.White, FlatStyle = FlatStyle.Flat };
+                btnOk.FlatAppearance.BorderSize = 0;
+                Button btnCancel = new Button { Text = "Cancel", DialogResult = DialogResult.Cancel, Location = new Point(260, 80), Size = new Size(80, 28) };
+
+                f.Controls.AddRange(new Control[] { lbl, tb, btnOk, btnCancel });
+                f.AcceptButton = btnOk;
+                f.CancelButton = btnCancel;
+
+                return f.ShowDialog() == DialogResult.OK ? tb.Text.Trim() : null;
+            }
+        }
+
         private void SwitchView(ScreenType screen)
         {
             currentScreen = screen;
@@ -913,6 +1167,13 @@ namespace Stock_Sync
             {
                 btnMobileAccess.Visible = Session.IsAdmin;
                 btnMobileAccess.Text = LocalizationManager.CurrentLanguage == AppLanguage.Amharic ? "📱 የስልክ መዳረሻ" : "📱 Phone Live";
+            }
+
+            // Staff Accounts Button (Visible strictly to Admin)
+            if (btnStaffAccounts != null)
+            {
+                btnStaffAccounts.Visible = Session.IsAdmin;
+                btnStaffAccounts.Text = LocalizationManager.CurrentLanguage == AppLanguage.Amharic ? "👥 ሰራተኞች" : "👥 Staff Access";
             }
 
             // Profile

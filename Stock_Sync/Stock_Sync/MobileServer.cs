@@ -238,6 +238,36 @@ namespace Stock_Sync
 
                         await HandleRestockAsync(stream, rawPath, requestBody, adminUser);
                     }
+                    else if (rawPath.StartsWith("/api/staff/create"))
+                    {
+                        if (!ValidateToken(tokenParam, out _))
+                        {
+                            string err = "{\"success\":false,\"message\":\"Admin authentication required.\"}";
+                            await SendResponseAsync(stream, "application/json; charset=utf-8", Encoding.UTF8.GetBytes(err), 401, "Unauthorized");
+                            return;
+                        }
+                        await HandleCreateStaffAsync(stream, rawPath, requestBody);
+                    }
+                    else if (rawPath.StartsWith("/api/staff/reset"))
+                    {
+                        if (!ValidateToken(tokenParam, out _))
+                        {
+                            string err = "{\"success\":false,\"message\":\"Admin authentication required.\"}";
+                            await SendResponseAsync(stream, "application/json; charset=utf-8", Encoding.UTF8.GetBytes(err), 401, "Unauthorized");
+                            return;
+                        }
+                        await HandleResetStaffAsync(stream, rawPath, requestBody);
+                    }
+                    else if (rawPath.StartsWith("/api/staff/delete"))
+                    {
+                        if (!ValidateToken(tokenParam, out _))
+                        {
+                            string err = "{\"success\":false,\"message\":\"Admin authentication required.\"}";
+                            await SendResponseAsync(stream, "application/json; charset=utf-8", Encoding.UTF8.GetBytes(err), 401, "Unauthorized");
+                            return;
+                        }
+                        await HandleDeleteStaffAsync(stream, rawPath, requestBody);
+                    }
                     else if (rawPath.StartsWith("/api/data"))
                     {
                         if (!ValidateToken(tokenParam, out _))
@@ -402,6 +432,54 @@ namespace Stock_Sync
                 Logger.LogError("Error processing mobile restock", ex);
                 string err = $"{{\"success\":false,\"message\":\"Restock error: {EscapeJson(ex.Message)}\"}}";
                 await SendResponseAsync(stream, "application/json; charset=utf-8", Encoding.UTF8.GetBytes(err), 500, "Internal Server Error");
+            }
+        }
+
+        private static async Task HandleCreateStaffAsync(NetworkStream stream, string rawPath, string requestBody)
+        {
+            string username = ExtractParam(rawPath, requestBody, "username") ?? ExtractParam(rawPath, requestBody, "u");
+            string password = ExtractParam(rawPath, requestBody, "password") ?? ExtractParam(rawPath, requestBody, "p");
+
+            bool success = StaffUserManager.CreateStaff(username, password, out string err);
+            string msg = success ? $"Staff account '{username}' created successfully! They can now log in on the POS." : err;
+            string res = $"{{\"success\":{(success ? "true" : "false")},\"message\":\"{EscapeJson(msg)}\"}}";
+            await SendResponseAsync(stream, "application/json; charset=utf-8", Encoding.UTF8.GetBytes(res));
+        }
+
+        private static async Task HandleResetStaffAsync(NetworkStream stream, string rawPath, string requestBody)
+        {
+            string idStr = ExtractParam(rawPath, requestBody, "userId") ?? ExtractParam(rawPath, requestBody, "id");
+            string newPass = ExtractParam(rawPath, requestBody, "password") ?? ExtractParam(rawPath, requestBody, "newPassword");
+
+            if (int.TryParse(idStr, out int uid))
+            {
+                bool success = StaffUserManager.ResetStaffPassword(uid, newPass, out string err);
+                string msg = success ? "Staff password reset successfully!" : err;
+                string res = $"{{\"success\":{(success ? "true" : "false")},\"message\":\"{EscapeJson(msg)}\"}}";
+                await SendResponseAsync(stream, "application/json; charset=utf-8", Encoding.UTF8.GetBytes(res));
+            }
+            else
+            {
+                string err = "{\"success\":false,\"message\":\"Invalid Staff User ID.\"}";
+                await SendResponseAsync(stream, "application/json; charset=utf-8", Encoding.UTF8.GetBytes(err), 400, "Bad Request");
+            }
+        }
+
+        private static async Task HandleDeleteStaffAsync(NetworkStream stream, string rawPath, string requestBody)
+        {
+            string idStr = ExtractParam(rawPath, requestBody, "userId") ?? ExtractParam(rawPath, requestBody, "id");
+
+            if (int.TryParse(idStr, out int uid))
+            {
+                bool success = StaffUserManager.DeleteStaff(uid, out string err);
+                string msg = success ? "Staff account removed successfully." : err;
+                string res = $"{{\"success\":{(success ? "true" : "false")},\"message\":\"{EscapeJson(msg)}\"}}";
+                await SendResponseAsync(stream, "application/json; charset=utf-8", Encoding.UTF8.GetBytes(res));
+            }
+            else
+            {
+                string err = "{\"success\":false,\"message\":\"Invalid Staff User ID.\"}";
+                await SendResponseAsync(stream, "application/json; charset=utf-8", Encoding.UTF8.GetBytes(err), 400, "Bad Request");
             }
         }
 
@@ -697,6 +775,22 @@ namespace Stock_Sync
                 sb.Append($"\"status\":\"{s.Status}\"");
                 sb.Append("}");
                 if (i < shifts.Count - 1) sb.Append(",");
+            }
+            sb.Append("],");
+
+            // 6. Registered Staff Accounts
+            var staffUsers = StaffUserManager.GetAllStaffUsers();
+            sb.Append("\"staffUsers\":[");
+            for (int i = 0; i < staffUsers.Count; i++)
+            {
+                var u = staffUsers[i];
+                sb.Append("{");
+                sb.Append($"\"id\":{u.UserId},");
+                sb.Append($"\"username\":\"{EscapeJson(u.Username)}\",");
+                sb.Append($"\"shifts\":{u.TotalShifts},");
+                sb.Append($"\"sales\":\"{EscapeJson(LocalizationManager.FormatMoney(u.TotalSalesRevenue))}\"");
+                sb.Append("}");
+                if (i < staffUsers.Count - 1) sb.Append(",");
             }
             sb.Append("]}");
 
@@ -1306,8 +1400,26 @@ namespace Stock_Sync
             </div>
         </div>
 
-        <!-- 4. TAB 3: STAFF SHIFTS & ACTIVITY (Who was on shift & who does what) -->
+        <!-- 4. TAB 3: STAFF SHIFTS & ACCOUNTS (Who was on shift, who does what, and staff management) -->
         <div id=""tabShifts"" style=""display:none;"">
+            <!-- Staff Management Header & Register Button -->
+            <div style=""display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;"">
+                <div class=""section-title"" id=""lblStaffSectionTitle"" style=""font-size:14px;"">👥 Staff Accounts & Shifts</div>
+                <button style=""background:#FF5B26; color:white; border:none; padding:7px 14px; border-radius:20px; font-size:12px; font-weight:800; cursor:pointer; box-shadow:0 2px 8px rgba(255,91,38,0.25);"" onclick=""openAddStaffModal()"">
+                    ➕ Add New Staff
+                </button>
+            </div>
+
+            <!-- Registered Cashiers List -->
+            <div class=""section-card"">
+                <div class=""section-header"">
+                    <div class=""section-title"" id=""lblRegisteredStaffTitle"">👤 Registered Staff (Cashiers)</div>
+                </div>
+                <div id=""staffAccountsList"">
+                    <div style=""text-align:center; color:#94A3B8; font-size:12px; padding:10px;"">Loading staff members...</div>
+                </div>
+            </div>
+
             <!-- Active Shift Card -->
             <div class=""section-card"">
                 <div class=""section-header"">
@@ -1374,6 +1486,47 @@ namespace Stock_Sync
             <div style=""display:flex; gap:10px; margin-top:14px;"">
                 <button style=""flex:1; background:#E2E8F0; color:#334155; border:none; padding:12px; border-radius:10px; font-weight:700;"" onclick=""closeRestockModal()"">Cancel</button>
                 <button style=""flex:2; background:#FF5B26; color:white; border:none; padding:12px; border-radius:10px; font-weight:800;"" id=""btnConfirmRestock"" onclick=""submitRestock()"">✅ Confirm Restock</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ADD STAFF MODAL -->
+    <div id=""modalAddStaff"" class=""modal-overlay"">
+        <div class=""modal-card"">
+            <div class=""modal-title"" id=""lblModalAddStaffTitle"">Register New Staff / Cashier</div>
+            <div class=""modal-sub"" id=""lblModalAddStaffSub"">Set a username & password. The employee can start selling on the POS immediately.</div>
+
+            <div class=""form-group"">
+                <label id=""lblNewStaffUser"">Staff Username</label>
+                <input type=""text"" id=""txtNewStaffUser"" class=""form-input"" placeholder=""e.g. eden"" autocomplete=""off"" />
+            </div>
+
+            <div class=""form-group"">
+                <label id=""lblNewStaffPass"">Staff Password</label>
+                <input type=""text"" id=""txtNewStaffPass"" class=""form-input"" placeholder=""e.g. 1234"" autocomplete=""off"" />
+            </div>
+
+            <div style=""display:flex; gap:10px; margin-top:16px;"">
+                <button style=""flex:1; background:#E2E8F0; color:#334155; border:none; padding:12px; border-radius:10px; font-weight:700;"" onclick=""closeAddStaffModal()"">Cancel</button>
+                <button style=""flex:2; background:#FF5B26; color:white; border:none; padding:12px; border-radius:10px; font-weight:800;"" id=""btnSubmitNewStaff"" onclick=""submitNewStaff()"">✅ Create Staff</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- RESET PASSWORD MODAL -->
+    <div id=""modalResetPass"" class=""modal-overlay"">
+        <div class=""modal-card"">
+            <div class=""modal-title"" id=""lblModalResetTitle"">Reset Staff Password</div>
+            <div class=""modal-sub"" id=""lblModalResetSub"">Enter a new password for this staff member.</div>
+
+            <div class=""form-group"">
+                <label id=""lblResetNewPass"">New Password</label>
+                <input type=""text"" id=""txtResetNewPass"" class=""form-input"" placeholder=""Enter new password"" />
+            </div>
+
+            <div style=""display:flex; gap:10px; margin-top:16px;"">
+                <button style=""flex:1; background:#E2E8F0; color:#334155; border:none; padding:12px; border-radius:10px; font-weight:700;"" onclick=""closeResetPassModal()"">Cancel</button>
+                <button style=""flex:2; background:#FF5B26; color:white; border:none; padding:12px; border-radius:10px; font-weight:800;"" onclick=""submitResetPass()"">Save Password</button>
             </div>
         </div>
     </div>
@@ -1613,6 +1766,27 @@ namespace Stock_Sync
                     `).join('') : '<div style=""text-align:center; color:#94A3B8; font-size:12px; padding:8px;"">No past shifts recorded</div>';
                 }
 
+                // Render Registered Staff Accounts
+                const stList = document.getElementById('staffAccountsList');
+                if (stList) {
+                    if (data.staffUsers && data.staffUsers.length > 0) {
+                        stList.innerHTML = data.staffUsers.map(u => `
+                            <div class=""order-row"">
+                                <div>
+                                    <div style=""font-weight:800; font-size:13px; color:#0F172A;"">👤 ${u.username}</div>
+                                    <div style=""font-size:11px; color:#64748B; margin-top:2px;"">${u.shifts} shifts • ${u.sales} sales</div>
+                                </div>
+                                <div style=""display:flex; gap:6px;"">
+                                    <button style=""background:#F1F5F9; color:#475569; border:none; padding:5px 9px; border-radius:6px; font-size:11px; font-weight:700; cursor:pointer;"" onclick=""openResetPassModal(${u.id}, '${u.username}')"">🔑 Reset</button>
+                                    <button style=""background:#FEE2E2; color:#DC2626; border:none; padding:5px 9px; border-radius:6px; font-size:11px; font-weight:700; cursor:pointer;"" onclick=""deleteStaffUser(${u.id}, '${u.username}')"">🗑️</button>
+                                </div>
+                            </div>
+                        `).join('');
+                    } else {
+                        stList.innerHTML = '<div style=""text-align:center; color:#94A3B8; font-size:12px; padding:10px;"">No staff accounts registered yet. Tap + Add New Staff above.</div>';
+                    }
+                }
+
                 // Refresh Inventory if on Tab 2
                 if (currentTab === 'inventory') {
                     renderInventory();
@@ -1737,6 +1911,118 @@ namespace Stock_Sync
             } finally {
                 btn.disabled = false;
                 btn.innerText = '✅ Confirm Restock';
+            }
+        }
+
+        let selectedStaffForReset = null;
+
+        function openAddStaffModal() {
+            document.getElementById('txtNewStaffUser').value = '';
+            document.getElementById('txtNewStaffPass').value = '';
+            document.getElementById('modalAddStaff').style.display = 'flex';
+        }
+
+        function closeAddStaffModal() {
+            document.getElementById('modalAddStaff').style.display = 'none';
+        }
+
+        async function submitNewStaff() {
+            const token = getActiveToken();
+            const u = document.getElementById('txtNewStaffUser').value.trim();
+            const p = document.getElementById('txtNewStaffPass').value.trim();
+
+            if (!u || !p) {
+                alert('Please enter both username and password.');
+                return;
+            }
+
+            const btn = document.getElementById('btnSubmitNewStaff');
+            btn.disabled = true;
+            btn.innerText = 'Creating...';
+
+            try {
+                const res = await fetch('/api/staff/create', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token: token, username: u, password: p })
+                });
+
+                const data = await res.json();
+                if (data.success) {
+                    alert(data.message);
+                    closeAddStaffModal();
+                    await fetchData();
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            } catch(e) {
+                alert('Connection error.');
+            } finally {
+                btn.disabled = false;
+                btn.innerText = '✅ Create Staff';
+            }
+        }
+
+        function openResetPassModal(id, username) {
+            selectedStaffForReset = { id: id, username: username };
+            document.getElementById('txtResetNewPass').value = '';
+            document.getElementById('lblModalResetTitle').innerText = (isAmharic ? 'የይለፍ ቃል ቀይር፦ ' : 'Reset Password: ') + username;
+            document.getElementById('modalResetPass').style.display = 'flex';
+        }
+
+        function closeResetPassModal() {
+            document.getElementById('modalResetPass').style.display = 'none';
+            selectedStaffForReset = null;
+        }
+
+        async function submitResetPass() {
+            if (!selectedStaffForReset) return;
+            const token = getActiveToken();
+            const newP = document.getElementById('txtResetNewPass').value.trim();
+
+            if (!newP) {
+                alert('Please enter a new password.');
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/staff/reset', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token: token, userId: selectedStaffForReset.id, password: newP })
+                });
+
+                const data = await res.json();
+                if (data.success) {
+                    alert(data.message);
+                    closeResetPassModal();
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            } catch(e) {
+                alert('Connection error.');
+            }
+        }
+
+        async function deleteStaffUser(id, username) {
+            if (!confirm('Are you sure you want to delete staff account ' + username + '?')) return;
+            const token = getActiveToken();
+
+            try {
+                const res = await fetch('/api/staff/delete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token: token, userId: id })
+                });
+
+                const data = await res.json();
+                if (data.success) {
+                    await fetchData();
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            } catch(e) {
+                alert('Connection error.');
             }
         }
 
