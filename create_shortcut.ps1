@@ -1,4 +1,4 @@
-﻿$WshShell = New-Object -ComObject WScript.Shell
+$WshShell = New-Object -ComObject WScript.Shell
 $desktop = [Environment]::GetFolderPath('Desktop')
 if (-not $desktop) {
     $desktop = "C:\Users\hp\Desktop"

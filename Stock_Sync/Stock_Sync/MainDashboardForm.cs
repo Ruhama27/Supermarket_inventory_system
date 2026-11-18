@@ -42,6 +42,7 @@ namespace Stock_Sync
         private Label lblClock;
         private Button btnNotificationBadge;
         private Button btnLangToggle;
+        private Button btnMobileAccess;
         private Timer clockTimer;
 
         // Sidebar Navigation Buttons
@@ -195,6 +196,16 @@ namespace Stock_Sync
 
             // Apply active localization
             ApplyLanguage();
+
+            // Start mobile micro-server for phone dashboard
+            try
+            {
+                MobileServer.Start();
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError("Failed to start MobileServer", ex);
+            }
         }
 
         protected override void Dispose(bool disposing)
@@ -204,6 +215,7 @@ namespace Stock_Sync
                 LocalizationManager.OnLanguageChanged -= ApplyLanguage;
                 clockTimer?.Dispose();
                 printDoc?.Dispose();
+                MobileServer.Stop();
             }
             base.Dispose(disposing);
         }
@@ -549,6 +561,22 @@ namespace Stock_Sync
             btnNotificationBadge.FlatAppearance.BorderSize = 0;
             btnNotificationBadge.Click += (s, e) => SwitchView(ScreenType.Alerts);
 
+            // Phone Live Access Button (Mobile Web Dashboard)
+            btnMobileAccess = new Button
+            {
+                Text = LocalizationManager.CurrentLanguage == AppLanguage.Amharic ? "📱 የስልክ መዳረሻ" : "📱 Phone Live",
+                Size = new Size(130, 34),
+                Location = new Point(pnlHeader.Width - 355, 16),
+                Anchor = AnchorStyles.Top | AnchorStyles.Right,
+                FlatStyle = FlatStyle.Flat,
+                BackColor = Color.FromArgb(238, 242, 255),
+                ForeColor = Color.FromArgb(79, 70, 229),
+                Font = new Font("Segoe UI", 9F, FontStyle.Bold),
+                Cursor = Cursors.Hand
+            };
+            btnMobileAccess.FlatAppearance.BorderSize = 0;
+            btnMobileAccess.Click += (s, e) => ShowMobileAccessDialog();
+
             // Language Toggle Button (Pill Styled - Mockup 1)
             btnLangToggle = new Button
             {
@@ -576,12 +604,13 @@ namespace Stock_Sync
                 ForeColor = UITheme.TextMuted,
                 AutoSize = true,
                 Anchor = AnchorStyles.Top | AnchorStyles.Right,
-                Location = new Point(pnlHeader.Width - 360, 24)
+                Location = new Point(pnlHeader.Width - 530, 24)
             };
 
             pnlHeader.Controls.Add(lblScreenTitle);
             pnlHeader.Controls.Add(lblBreadcrumb);
             pnlHeader.Controls.Add(lblClock);
+            pnlHeader.Controls.Add(btnMobileAccess);
             pnlHeader.Controls.Add(btnNotificationBadge);
             pnlHeader.Controls.Add(btnLangToggle);
         }
@@ -594,6 +623,168 @@ namespace Stock_Sync
                 lblClock.Text = DateTime.Now.ToString("dd-MM-yyyy | HH:mm");
             };
             clockTimer.Start();
+        }
+
+        private void ShowMobileAccessDialog()
+        {
+            bool isAmh = LocalizationManager.CurrentLanguage == AppLanguage.Amharic;
+            string mobileUrl = MobileServer.GetMobileUrl();
+            string localhostUrl = MobileServer.GetLocalhostUrl();
+
+            using (Form dlg = new Form())
+            {
+                dlg.Text = isAmh ? "የስልክ መዳረሻ ዳሽቦርድ" : "Stock-Sync Mobile Dashboard";
+                dlg.Size = new Size(560, 440);
+                dlg.StartPosition = FormStartPosition.CenterParent;
+                dlg.FormBorderStyle = FormBorderStyle.FixedDialog;
+                dlg.MaximizeBox = false;
+                dlg.MinimizeBox = false;
+                dlg.BackColor = Color.White;
+
+                // Top banner
+                Panel topBanner = new Panel
+                {
+                    Dock = DockStyle.Top,
+                    Height = 75,
+                    BackColor = Color.FromArgb(254, 242, 237),
+                    Padding = new Padding(24, 16, 24, 16)
+                };
+                Label lblDlgTitle = new Label
+                {
+                    Text = isAmh ? "📱 የስልክ መዳረሻ ዳሽቦርድ (ቀጥታ)" : "📱 Live Mobile Dashboard Access",
+                    Font = new Font("Segoe UI", 12.5F, FontStyle.Bold),
+                    ForeColor = UITheme.Primary,
+                    AutoSize = true,
+                    Location = new Point(20, 14)
+                };
+                Label lblDlgSub = new Label
+                {
+                    Text = isAmh 
+                        ? "በሱቁ ዋይፋይ (Wi-Fi) አማካኝነት ስልክዎ ላይ ሽያጭ እና ክምችት በቅጽበት ይከታተሉ" 
+                        : "View live sales, completed orders, and low-stock alerts from your mobile phone.",
+                    Font = new Font("Segoe UI", 8.5F, FontStyle.Regular),
+                    ForeColor = UITheme.TextMuted,
+                    AutoSize = true,
+                    Location = new Point(22, 42)
+                };
+                topBanner.Controls.Add(lblDlgTitle);
+                topBanner.Controls.Add(lblDlgSub);
+
+                Label lblStep1 = new Label
+                {
+                    Text = isAmh ? "በስልክዎ ብሮውዘር (Chrome / Safari) ይህንን አድራሻ ይክፈቱ፦" : "Open this URL in your phone's browser (Chrome or Safari):",
+                    Font = new Font("Segoe UI", 9.5F, FontStyle.Bold),
+                    ForeColor = UITheme.TextMain,
+                    AutoSize = true,
+                    Location = new Point(24, 95)
+                };
+
+                // URL display box
+                TextBox txtUrl = new TextBox
+                {
+                    Text = mobileUrl,
+                    Font = new Font("Consolas", 12F, FontStyle.Bold),
+                    ForeColor = UITheme.Primary,
+                    BackColor = Color.FromArgb(248, 250, 252),
+                    ReadOnly = true,
+                    Location = new Point(24, 125),
+                    Size = new Size(350, 30)
+                };
+
+                Button btnCopy = new Button
+                {
+                    Text = isAmh ? "📋 ኮፒ አድርግ" : "📋 Copy Link",
+                    Font = new Font("Segoe UI", 9F, FontStyle.Bold),
+                    BackColor = UITheme.Primary,
+                    ForeColor = Color.White,
+                    FlatStyle = FlatStyle.Flat,
+                    Size = new Size(130, 30),
+                    Location = new Point(385, 124),
+                    Cursor = Cursors.Hand
+                };
+                btnCopy.FlatAppearance.BorderSize = 0;
+                btnCopy.Click += (s, e) =>
+                {
+                    try
+                    {
+                        Clipboard.SetText(mobileUrl);
+                        btnCopy.Text = isAmh ? "✓ ተገልብጧል!" : "✓ Copied!";
+                    }
+                    catch { }
+                };
+
+                // Instructions
+                Label lblInstructions = new Label
+                {
+                    Text = isAmh
+                        ? "💡 መመሪያ፦\n" +
+                          "1. ስልክዎ እና ይህ ኮምፒውተር በአንድ የዋይፋይ (Wi-Fi) ኔትወርክ ላይ መሆናቸውን ያረጋግጡ።\n" +
+                          "2. ከላይ ያለውን አድራሻ በስልክዎ ላይ ይክፈቱ። በየ 15 ሰከንዱ ራሱ ይታደሳል።\n" +
+                          "3. በስልክዎ 'Add to Home screen' በማድረግ እንደ መተግበሪያ መጠቀም ይችላሉ!"
+                        : "💡 Quick Tips:\n" +
+                          "1. Ensure your phone is connected to the same Wi-Fi / Hotspot as this computer.\n" +
+                          "2. Type or scan the address above. The dashboard auto-refreshes every 15s.\n" +
+                          "3. Tap 'Add to Home Screen' in Safari/Chrome for 1-tap app experience!",
+                    Font = new Font("Segoe UI", 8.8F, FontStyle.Regular),
+                    ForeColor = Color.FromArgb(71, 85, 105),
+                    Location = new Point(24, 175),
+                    Size = new Size(490, 110)
+                };
+
+                // Bottom action buttons
+                Button btnTestBrowser = new Button
+                {
+                    Text = isAmh ? "🌐 በኮምፒውተርዎ ይሞክሩት" : "🌐 Test in PC Browser",
+                    Font = new Font("Segoe UI", 9F, FontStyle.Bold),
+                    BackColor = Color.FromArgb(241, 245, 249),
+                    ForeColor = UITheme.TextMain,
+                    FlatStyle = FlatStyle.Flat,
+                    Size = new Size(170, 36),
+                    Location = new Point(24, 320),
+                    Cursor = Cursors.Hand
+                };
+                btnTestBrowser.FlatAppearance.BorderSize = 0;
+                btnTestBrowser.Click += (s, e) =>
+                {
+                    try
+                    {
+                        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                        {
+                            FileName = localhostUrl,
+                            UseShellExecute = true
+                        });
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show("Could not open browser: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    }
+                };
+
+                Button btnClose = new Button
+                {
+                    Text = isAmh ? "ዝጋ" : "Close",
+                    Font = new Font("Segoe UI", 9F, FontStyle.Bold),
+                    BackColor = Color.FromArgb(226, 232, 240),
+                    ForeColor = UITheme.TextMain,
+                    FlatStyle = FlatStyle.Flat,
+                    Size = new Size(100, 36),
+                    Location = new Point(415, 320),
+                    Cursor = Cursors.Hand,
+                    DialogResult = DialogResult.OK
+                };
+                btnClose.FlatAppearance.BorderSize = 0;
+
+                dlg.Controls.Add(lblStep1);
+                dlg.Controls.Add(txtUrl);
+                dlg.Controls.Add(btnCopy);
+                dlg.Controls.Add(lblInstructions);
+                dlg.Controls.Add(btnTestBrowser);
+                dlg.Controls.Add(btnClose);
+                dlg.Controls.Add(topBanner);
+                dlg.AcceptButton = btnClose;
+
+                dlg.ShowDialog(this);
+            }
         }
 
         private void SwitchView(ScreenType screen)
@@ -705,6 +896,12 @@ namespace Stock_Sync
             if (btnLangToggle != null)
             {
                 btnLangToggle.Text = LocalizationManager.CurrentLanguage == AppLanguage.English ? "🌐 አማርኛ" : "🌐 English";
+            }
+
+            // Mobile Access Button
+            if (btnMobileAccess != null)
+            {
+                btnMobileAccess.Text = LocalizationManager.CurrentLanguage == AppLanguage.Amharic ? "📱 የስልክ መዳረሻ" : "📱 Phone Live";
             }
 
             // Profile
