@@ -26,12 +26,15 @@ Stock-Sync streamlines retail operations by combining barcode scanning, multi-ba
 
 ## ✨ Key Features & Improvements
 
-### 🎨 Modern SaaS Dashboard UI
-- **Single-Window Application Shell**: Eliminates scattered popup windows in favor of a cohesive, modern layout inspired by cloud SaaS applications.
-- **Dark Slate Navy Sidebar (`#142936`)**: Ergonomic navigation with active state pills (`#E3EDF3`) and smooth transitions.
-- **Clean Typography & Card Containers**: Crisp Segoe UI typography, elevated white card containers (`#FFFFFF`), and soft-contrast slate backgrounds (`#EEF3F6`).
+### 🎨 Modern Store Management & POS Dashboard UI
+- **Single-Window Application Shell**: Eliminates scattered popup windows in favor of a cohesive, modern layout inspired by cloud SaaS and modern POS systems.
+- **Pure White Sidebar (`#FFFFFF`)**: Clean, minimalist navigation with vibrant Coral-Orange (`#FF5B26`) rounded active pills, section groupings (`MENU`, `OTHERS`), and bottom user profile card (`Admin / Staff`).
+- **Signature KPI Summary Strip**: Prominent top summary strip featuring a solid coral card (`Total Orders / Today's Sales`) alongside crisp metric cards (`Occupied / Today's Invoices`, `Reserved / Active Products`, `Available / Low Stock`).
+- **Status Badges & Pills**: Modern rounded status badges (`Available / Completed` in soft mint `#E6F7ED`, `Occupied / Low Stock` in soft peach `#FFF0EB`, `Reserved / Pending` in soft lavender `#EEF2FF`).
+- **Warm Orange Login Screen (`#FF7518`)**: Warm ambient backdrop with 3D-style depth spheres, centered elevated white card container, and pill action buttons.
+- **Ethiopian Birr Currency Formatting**: Financial figures formatted dynamically in Birr (`ETB 126.00` in English, `126.00 ብር` in Amharic).
 - **7 Integrated Views**:
-  1. **Orders Screen**: Complete invoice history with status badges (`Completed`, `Pending`, `Cancelled`), date range picker, and pagination footer.
+  1. **Orders Screen**: Complete invoice history with status badges (`Completed`, `Pending`, `Cancelled`), date range picker, search filter, and pagination footer.
   2. **Point of Sale (POS)**: Real-time barcode scanning, dynamic cart grid, subtotal/tax calculation, cash received/change due calculator, and thermal receipt generation.
   3. **Products Catalog**: Full CRUD operations with soft-delete deactivation and real-time search.
   4. **Stock Batches**: Multi-batch inventory tracking with batch codes, cost price, selling price, arrival dates, and expiry date warnings.

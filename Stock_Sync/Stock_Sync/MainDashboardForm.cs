@@ -33,20 +33,23 @@ namespace Stock_Sync
 
         // Profile controls
         private Label lblProfileName;
+        private Label lblProfileSubtitle;
+        private Label lblAvatar;
 
         // Header controls
         private Label lblScreenTitle;
         private Label lblBreadcrumb;
         private Label lblClock;
+        private Button btnNotificationBadge;
         private Button btnLangToggle;
         private Timer clockTimer;
 
         // Sidebar Navigation Buttons
+        private Button btnNavDashboard;
         private Button btnNavOrders;
         private Button btnNavPos;
         private Button btnNavProducts;
         private Button btnNavStock;
-        private Button btnNavDashboard;
         private Button btnNavReports;
         private Button btnNavAlerts;
         private Button btnNavLogout;
@@ -61,14 +64,25 @@ namespace Stock_Sync
         private Panel pnlViewReports;
         private Panel pnlViewAlerts;
 
-        // View 1: Orders Screen Controls
+        // View 1: Orders Screen Controls (Matching Mockup 1)
+        private Label lblOrdersKpiTotalTitle;
+        private Label lblOrdersKpiTotalVal;
+        private Label lblOrdersKpiSalesTitle;
+        private Label lblOrdersKpiSalesVal;
+        private Label lblOrdersKpiDoneTitle;
+        private Label lblOrdersKpiDoneVal;
+        private Label lblOrdersKpiPendingTitle;
+        private Label lblOrdersKpiPendingVal;
+
         private Label lblOrdersCardTitle;
         private Button btnOrdersTabAll;
         private Button btnOrdersTabCompleted;
         private Button btnOrdersTabPending;
+        private TextBox txtOrdersSearch;
         private Button btnExportOrders;
         private DataGridView dgvOrders;
         private DateTimePicker dtpOrdersFilter;
+        private string activeOrderTab = "All";
 
         // View 2: POS Controls
         private Bill activeBill = new Bill();
@@ -176,7 +190,7 @@ namespace Stock_Sync
             // Subscribe to language switcher events
             LocalizationManager.OnLanguageChanged += ApplyLanguage;
 
-            // Load initial view (Orders Screen to match mockup)
+            // Load initial view (Orders Screen to match Mockup 1)
             SwitchView(ScreenType.Orders);
 
             // Apply active localization
@@ -197,30 +211,46 @@ namespace Stock_Sync
         private void InitializeModernLayout()
         {
             this.Text = "Stock-Sync — Supermarket Inventory & POS System";
-            this.Size = new Size(1300, 820);
+            this.Size = new Size(1320, 840);
             this.MinimumSize = new Size(1100, 700);
             this.StartPosition = FormStartPosition.CenterScreen;
             this.BackColor = UITheme.AppBg;
             this.Font = UITheme.FontRegular;
 
-            // 1. Sidebar (Left)
+            // 1. Sidebar (Left) - Pure White matching Mockup 1
             pnlSidebar = new Panel
             {
                 Dock = DockStyle.Left,
-                Width = 230,
+                Width = 240,
                 BackColor = UITheme.SidebarBg,
                 Padding = new Padding(0)
+            };
+            pnlSidebar.Paint += (s, e) =>
+            {
+                // Draw subtle right border line
+                using (Pen borderPen = new Pen(UITheme.SidebarBorder, 1))
+                {
+                    e.Graphics.DrawLine(borderPen, pnlSidebar.Width - 1, 0, pnlSidebar.Width - 1, pnlSidebar.Height);
+                }
             };
 
             BuildSidebar();
 
-            // 2. Header (Top)
+            // 2. Header (Top) - Pure White matching Mockup 1
             pnlHeader = new Panel
             {
                 Dock = DockStyle.Top,
-                Height = 65,
+                Height = 68,
                 BackColor = UITheme.CardBg,
                 Padding = new Padding(24, 12, 24, 12)
+            };
+            pnlHeader.Paint += (s, e) =>
+            {
+                // Draw subtle bottom border line
+                using (Pen borderPen = new Pen(UITheme.CardBorder, 1))
+                {
+                    e.Graphics.DrawLine(borderPen, 0, pnlHeader.Height - 1, pnlHeader.Width, pnlHeader.Height - 1);
+                }
             };
 
             BuildHeader();
@@ -248,28 +278,85 @@ namespace Stock_Sync
             this.Controls.Add(pnlSidebar);
         }
 
-        #region Sidebar & Header Construction
+        #region Sidebar & Header Construction (Matching Mockup 1)
         private void BuildSidebar()
         {
-            // Profile Card (Top of Sidebar)
-            Panel pnlProfile = new Panel
+            // Brand Logo Header (Top of Sidebar - Mockup 1 [📦] D.CC / Stock-Sync)
+            Panel pnlBrand = new Panel
             {
                 Dock = DockStyle.Top,
-                Height = 135,
+                Height = 72,
                 BackColor = UITheme.SidebarBg,
-                Padding = new Padding(16, 20, 16, 12)
+                Padding = new Padding(18, 16, 18, 10)
             };
 
-            // Circular Avatar Placeholder
-            Label lblAvatar = new Label
+            // Coral rounded square icon badge [📦]
+            Label lblBrandBadge = new Label
             {
-                Size = new Size(50, 50),
-                Location = new Point(90, 10),
+                Size = new Size(38, 38),
+                Location = new Point(18, 16),
                 BackColor = UITheme.Primary,
                 ForeColor = Color.White,
-                Font = new Font("Segoe UI", 14F, FontStyle.Bold),
+                Font = new Font("Segoe UI", 12F, FontStyle.Bold),
+                Text = "📦",
+                TextAlign = ContentAlignment.MiddleCenter
+            };
+            lblBrandBadge.Paint += (s, e) =>
+            {
+                using (GraphicsPath path = UITheme.GetRoundedPath(new Rectangle(0, 0, lblBrandBadge.Width, lblBrandBadge.Height), 8))
+                {
+                    lblBrandBadge.Region = new Region(path);
+                }
+            };
+
+            Label lblBrandTitle = new Label
+            {
+                Text = "Stock-Sync",
+                Font = new Font("Segoe UI", 12.5F, FontStyle.Bold),
+                ForeColor = UITheme.TextMain,
+                Location = new Point(64, 16),
+                AutoSize = true
+            };
+
+            Label lblBrandSub = new Label
+            {
+                Text = "← Store Management",
+                Font = new Font("Segoe UI", 8F, FontStyle.Regular),
+                ForeColor = UITheme.TextMuted,
+                Location = new Point(65, 38),
+                AutoSize = true
+            };
+
+            pnlBrand.Controls.Add(lblBrandBadge);
+            pnlBrand.Controls.Add(lblBrandTitle);
+            pnlBrand.Controls.Add(lblBrandSub);
+            pnlSidebar.Controls.Add(pnlBrand);
+
+            // Bottom Profile Card (Mockup 1 John Holland / Admin)
+            Panel pnlProfileBottom = new Panel
+            {
+                Dock = DockStyle.Bottom,
+                Height = 70,
+                BackColor = UITheme.SidebarBg,
+                Padding = new Padding(16, 12, 16, 12)
+            };
+            pnlProfileBottom.Paint += (s, e) =>
+            {
+                using (Pen p = new Pen(UITheme.SidebarBorder, 1))
+                {
+                    e.Graphics.DrawLine(p, 0, 0, pnlProfileBottom.Width, 0);
+                }
+            };
+
+            lblAvatar = new Label
+            {
+                Size = new Size(40, 40),
+                Location = new Point(16, 15),
+                BackColor = UITheme.PrimaryLight,
+                ForeColor = UITheme.Primary,
+                Font = new Font("Segoe UI", 11F, FontStyle.Bold),
                 TextAlign = ContentAlignment.MiddleCenter,
-                Text = string.IsNullOrEmpty(Session.Role) ? "AD" : Session.Role.Substring(0, 2).ToUpper()
+                Text = string.IsNullOrEmpty(Session.Role) ? "AD" : Session.Role.Substring(0, Math.Min(2, Session.Role.Length)).ToUpper()
             };
             lblAvatar.Paint += (s, e) =>
             {
@@ -283,84 +370,30 @@ namespace Stock_Sync
             lblProfileName = new Label
             {
                 Text = Session.IsAdmin ? LocalizationManager.T("AdminRole") : LocalizationManager.T("StaffRole"),
-                Font = new Font("Segoe UI", 11F, FontStyle.Bold),
-                ForeColor = Color.White,
-                TextAlign = ContentAlignment.MiddleCenter,
-                Dock = DockStyle.Bottom,
-                Height = 22
+                Font = new Font("Segoe UI", 9.5F, FontStyle.Bold),
+                ForeColor = UITheme.TextMain,
+                Location = new Point(64, 16),
+                Size = new Size(125, 18)
             };
 
-            Label lblEmail = new Label
+            lblProfileSubtitle = new Label
             {
-                Text = string.IsNullOrEmpty(Session.Email) ? "admin@gmail.com" : Session.Email,
-                Font = new Font("Segoe UI", 8.5F, FontStyle.Regular),
-                ForeColor = UITheme.SidebarText,
-                TextAlign = ContentAlignment.MiddleCenter,
-                Dock = DockStyle.Bottom,
-                Height = 18
-            };
-
-            pnlProfile.Controls.Add(lblAvatar);
-            pnlProfile.Controls.Add(lblProfileName);
-            pnlProfile.Controls.Add(lblEmail);
-            pnlSidebar.Controls.Add(pnlProfile);
-
-            // Navigation Container
-            Panel pnlNavContainer = new Panel
-            {
-                Dock = DockStyle.Fill,
-                BackColor = UITheme.SidebarBg,
-                Padding = new Padding(14, 10, 14, 10)
-            };
-
-            // Nav buttons matching the layout from the mockup
-            btnNavOrders = CreateNavButton(LocalizationManager.T("NavOrders"));
-            btnNavPos = CreateNavButton(LocalizationManager.T("NavPos"));
-            btnNavProducts = CreateNavButton(LocalizationManager.T("NavProducts"));
-            btnNavStock = CreateNavButton(LocalizationManager.T("NavStock"));
-            btnNavDashboard = CreateNavButton(LocalizationManager.T("NavDashboard"));
-            btnNavReports = CreateNavButton(LocalizationManager.T("NavReports"));
-            btnNavAlerts = CreateNavButton(LocalizationManager.T("NavAlerts"));
-
-            // Events
-            btnNavOrders.Click += (s, e) => SwitchView(ScreenType.Orders);
-            btnNavPos.Click += (s, e) => SwitchView(ScreenType.Pos);
-            btnNavProducts.Click += (s, e) => SwitchView(ScreenType.Products);
-            btnNavStock.Click += (s, e) => SwitchView(ScreenType.Stock);
-            btnNavDashboard.Click += (s, e) => SwitchView(ScreenType.Dashboard);
-            btnNavReports.Click += (s, e) => SwitchView(ScreenType.Reports);
-            btnNavAlerts.Click += (s, e) => SwitchView(ScreenType.Alerts);
-
-            // Add buttons in reverse order for Dock = Top
-            pnlNavContainer.Controls.Add(btnNavAlerts);
-            pnlNavContainer.Controls.Add(btnNavReports);
-            pnlNavContainer.Controls.Add(btnNavDashboard);
-            pnlNavContainer.Controls.Add(btnNavStock);
-            pnlNavContainer.Controls.Add(btnNavProducts);
-            pnlNavContainer.Controls.Add(btnNavPos);
-            pnlNavContainer.Controls.Add(btnNavOrders);
-
-            pnlSidebar.Controls.Add(pnlNavContainer);
-
-            // Logout Button at Bottom
-            Panel pnlLogoutBottom = new Panel
-            {
-                Dock = DockStyle.Bottom,
-                Height = 65,
-                BackColor = UITheme.SidebarBg,
-                Padding = new Padding(14, 10, 14, 14)
+                Text = string.IsNullOrEmpty(Session.Email) ? "Admin User" : Session.Email,
+                Font = new Font("Segoe UI", 7.5F, FontStyle.Regular),
+                ForeColor = UITheme.TextMuted,
+                Location = new Point(64, 35),
+                Size = new Size(125, 16)
             };
 
             btnNavLogout = new Button
             {
-                Text = LocalizationManager.T("NavLogout"),
-                Dock = DockStyle.Fill,
+                Text = "🚪",
+                Size = new Size(32, 32),
+                Location = new Point(195, 18),
                 FlatStyle = FlatStyle.Flat,
-                BackColor = UITheme.SidebarBg,
-                ForeColor = Color.FromArgb(248, 113, 113), // Soft light red
+                BackColor = UITheme.PrimaryLight,
+                ForeColor = UITheme.Primary,
                 Font = new Font("Segoe UI", 10F, FontStyle.Bold),
-                TextAlign = ContentAlignment.MiddleLeft,
-                Padding = new Padding(16, 0, 0, 0),
                 Cursor = Cursors.Hand
             };
             btnNavLogout.FlatAppearance.BorderSize = 0;
@@ -373,8 +406,75 @@ namespace Stock_Sync
                 this.Dispose();
             };
 
-            pnlLogoutBottom.Controls.Add(btnNavLogout);
-            pnlSidebar.Controls.Add(pnlLogoutBottom);
+            pnlProfileBottom.Controls.Add(lblAvatar);
+            pnlProfileBottom.Controls.Add(lblProfileName);
+            pnlProfileBottom.Controls.Add(lblProfileSubtitle);
+            pnlProfileBottom.Controls.Add(btnNavLogout);
+            pnlSidebar.Controls.Add(pnlProfileBottom);
+
+            // Navigation Container (Middle of Sidebar)
+            Panel pnlNavContainer = new Panel
+            {
+                Dock = DockStyle.Fill,
+                BackColor = UITheme.SidebarBg,
+                Padding = new Padding(12, 10, 12, 10),
+                AutoScroll = true
+            };
+
+            // Section 1: Menu / Store Management
+            Label lblSectionMenu = new Label
+            {
+                Text = "MENU",
+                Font = UITheme.FontTiny,
+                ForeColor = UITheme.SidebarSection,
+                Dock = DockStyle.Top,
+                Height = 24,
+                TextAlign = ContentAlignment.BottomLeft,
+                Padding = new Padding(8, 0, 0, 4)
+            };
+
+            btnNavDashboard = CreateNavButton("⊞   " + LocalizationManager.T("NavDashboard"));
+            btnNavOrders = CreateNavButton("🧾   " + LocalizationManager.T("NavOrders"));
+            btnNavPos = CreateNavButton("🍽   " + LocalizationManager.T("NavPos"));
+            btnNavProducts = CreateNavButton("📦   " + LocalizationManager.T("NavProducts"));
+            btnNavStock = CreateNavButton("📋   " + LocalizationManager.T("NavStock"));
+            btnNavReports = CreateNavButton("📈   " + LocalizationManager.T("NavReports"));
+
+            // Section 2: Others
+            Label lblSectionOthers = new Label
+            {
+                Text = "OTHERS",
+                Font = UITheme.FontTiny,
+                ForeColor = UITheme.SidebarSection,
+                Dock = DockStyle.Top,
+                Height = 32,
+                TextAlign = ContentAlignment.BottomLeft,
+                Padding = new Padding(8, 10, 0, 4)
+            };
+
+            btnNavAlerts = CreateNavButton("🔔   " + LocalizationManager.T("NavAlerts"));
+
+            // Navigation Click Handlers
+            btnNavDashboard.Click += (s, e) => SwitchView(ScreenType.Dashboard);
+            btnNavOrders.Click += (s, e) => SwitchView(ScreenType.Orders);
+            btnNavPos.Click += (s, e) => SwitchView(ScreenType.Pos);
+            btnNavProducts.Click += (s, e) => SwitchView(ScreenType.Products);
+            btnNavStock.Click += (s, e) => SwitchView(ScreenType.Stock);
+            btnNavReports.Click += (s, e) => SwitchView(ScreenType.Reports);
+            btnNavAlerts.Click += (s, e) => SwitchView(ScreenType.Alerts);
+
+            // Add to navigation panel in reverse order for Dock = Top
+            pnlNavContainer.Controls.Add(btnNavAlerts);
+            pnlNavContainer.Controls.Add(lblSectionOthers);
+            pnlNavContainer.Controls.Add(btnNavReports);
+            pnlNavContainer.Controls.Add(btnNavStock);
+            pnlNavContainer.Controls.Add(btnNavProducts);
+            pnlNavContainer.Controls.Add(btnNavPos);
+            pnlNavContainer.Controls.Add(btnNavOrders);
+            pnlNavContainer.Controls.Add(btnNavDashboard);
+            pnlNavContainer.Controls.Add(lblSectionMenu);
+
+            pnlSidebar.Controls.Add(pnlNavContainer);
         }
 
         private Button CreateNavButton(string text)
@@ -383,17 +483,32 @@ namespace Stock_Sync
             {
                 Text = text,
                 Dock = DockStyle.Top,
-                Height = 44,
+                Height = 42,
                 FlatStyle = FlatStyle.Flat,
-                BackColor = UITheme.SidebarBg,
+                BackColor = Color.White,
                 ForeColor = UITheme.SidebarText,
                 Font = new Font("Segoe UI", 9.5F, FontStyle.Regular),
                 TextAlign = ContentAlignment.MiddleLeft,
-                Padding = new Padding(16, 0, 0, 0),
-                Margin = new Padding(0, 4, 0, 4),
+                Padding = new Padding(12, 0, 0, 0),
+                Margin = new Padding(0, 2, 0, 2),
                 Cursor = Cursors.Hand
             };
             btn.FlatAppearance.BorderSize = 0;
+            btn.MouseEnter += (s, e) =>
+            {
+                if (btn.BackColor != UITheme.SidebarActiveBg)
+                {
+                    btn.BackColor = UITheme.SidebarHover;
+                }
+            };
+            btn.MouseLeave += (s, e) =>
+            {
+                if (btn.BackColor != UITheme.SidebarActiveBg)
+                {
+                    btn.BackColor = Color.White;
+                }
+            };
+
             navButtons.Add(btn);
             return btn;
         }
@@ -403,7 +518,7 @@ namespace Stock_Sync
             lblScreenTitle = new Label
             {
                 Text = LocalizationManager.T("TitleOrders"),
-                Font = new Font("Segoe UI", 14F, FontStyle.Bold),
+                Font = new Font("Segoe UI", 15F, FontStyle.Bold),
                 ForeColor = UITheme.TextMain,
                 AutoSize = true,
                 Location = new Point(20, 10)
@@ -415,19 +530,35 @@ namespace Stock_Sync
                 Font = new Font("Segoe UI", 8.5F, FontStyle.Regular),
                 ForeColor = UITheme.TextMuted,
                 AutoSize = true,
-                Location = new Point(22, 36)
+                Location = new Point(22, 38)
             };
 
-            // Language Toggle Button (Pill Styled)
+            // Notification Pill Button with badge (Mockup 1 🔔 8+)
+            btnNotificationBadge = new Button
+            {
+                Text = "🔔 8+",
+                Size = new Size(68, 34),
+                Location = new Point(pnlHeader.Width - 215, 16),
+                Anchor = AnchorStyles.Top | AnchorStyles.Right,
+                FlatStyle = FlatStyle.Flat,
+                BackColor = UITheme.PrimaryLight,
+                ForeColor = UITheme.Primary,
+                Font = new Font("Segoe UI", 9F, FontStyle.Bold),
+                Cursor = Cursors.Hand
+            };
+            btnNotificationBadge.FlatAppearance.BorderSize = 0;
+            btnNotificationBadge.Click += (s, e) => SwitchView(ScreenType.Alerts);
+
+            // Language Toggle Button (Pill Styled - Mockup 1)
             btnLangToggle = new Button
             {
                 Text = LocalizationManager.CurrentLanguage == AppLanguage.English ? "🌐 አማርኛ" : "🌐 English",
-                Size = new Size(115, 34),
-                Location = new Point(pnlHeader.Width - 135, 15),
+                Size = new Size(125, 34),
+                Location = new Point(pnlHeader.Width - 140, 16),
                 Anchor = AnchorStyles.Top | AnchorStyles.Right,
                 FlatStyle = FlatStyle.Flat,
-                BackColor = UITheme.SidebarActiveBg,
-                ForeColor = UITheme.SidebarActiveText,
+                BackColor = UITheme.PrimaryLight,
+                ForeColor = UITheme.Primary,
                 Font = new Font("Segoe UI", 9.5F, FontStyle.Bold),
                 Cursor = Cursors.Hand
             };
@@ -437,19 +568,21 @@ namespace Stock_Sync
                 LocalizationManager.ToggleLanguage();
             };
 
+            // Live Clock
             lblClock = new Label
             {
-                Text = DateTime.Now.ToString("dddd, dd MMM yyyy | HH:mm"),
-                Font = new Font("Segoe UI", 9.5F, FontStyle.Regular),
+                Text = DateTime.Now.ToString("dd-MM-yyyy | HH:mm"),
+                Font = new Font("Segoe UI", 9F, FontStyle.Regular),
                 ForeColor = UITheme.TextMuted,
                 AutoSize = true,
                 Anchor = AnchorStyles.Top | AnchorStyles.Right,
-                Location = new Point(pnlHeader.Width - 370, 22)
+                Location = new Point(pnlHeader.Width - 360, 24)
             };
 
             pnlHeader.Controls.Add(lblScreenTitle);
             pnlHeader.Controls.Add(lblBreadcrumb);
             pnlHeader.Controls.Add(lblClock);
+            pnlHeader.Controls.Add(btnNotificationBadge);
             pnlHeader.Controls.Add(btnLangToggle);
         }
 
@@ -458,7 +591,7 @@ namespace Stock_Sync
             clockTimer = new Timer { Interval = 30000 };
             clockTimer.Tick += (s, e) =>
             {
-                lblClock.Text = DateTime.Now.ToString("dddd, dd MMM yyyy | HH:mm");
+                lblClock.Text = DateTime.Now.ToString("dd-MM-yyyy | HH:mm");
             };
             clockTimer.Start();
         }
@@ -479,7 +612,7 @@ namespace Stock_Sync
             // Reset navigation button pill styling
             foreach (var b in navButtons)
             {
-                b.BackColor = UITheme.SidebarBg;
+                b.BackColor = Color.White;
                 b.ForeColor = UITheme.SidebarText;
                 b.Font = new Font("Segoe UI", 9.5F, FontStyle.Regular);
             }
@@ -541,7 +674,7 @@ namespace Stock_Sync
                     break;
             }
 
-            // Highlight active button with inspiration mockup pill style
+            // Highlight active button with vibrant coral pill (Mockup 1)
             if (activeBtn != null)
             {
                 activeBtn.BackColor = UITheme.SidebarActiveBg;
@@ -581,14 +714,13 @@ namespace Stock_Sync
             }
 
             // Sidebar Nav
-            if (btnNavOrders != null) btnNavOrders.Text = LocalizationManager.T("NavOrders");
-            if (btnNavPos != null) btnNavPos.Text = LocalizationManager.T("NavPos");
-            if (btnNavProducts != null) btnNavProducts.Text = LocalizationManager.T("NavProducts");
-            if (btnNavStock != null) btnNavStock.Text = LocalizationManager.T("NavStock");
-            if (btnNavDashboard != null) btnNavDashboard.Text = LocalizationManager.T("NavDashboard");
-            if (btnNavReports != null) btnNavReports.Text = LocalizationManager.T("NavReports");
-            if (btnNavAlerts != null) btnNavAlerts.Text = LocalizationManager.T("NavAlerts");
-            if (btnNavLogout != null) btnNavLogout.Text = LocalizationManager.T("NavLogout");
+            if (btnNavDashboard != null) btnNavDashboard.Text = "⊞   " + LocalizationManager.T("NavDashboard");
+            if (btnNavOrders != null) btnNavOrders.Text = "🧾   " + LocalizationManager.T("NavOrders");
+            if (btnNavPos != null) btnNavPos.Text = "🍽   " + LocalizationManager.T("NavPos");
+            if (btnNavProducts != null) btnNavProducts.Text = "📦   " + LocalizationManager.T("NavProducts");
+            if (btnNavStock != null) btnNavStock.Text = "📋   " + LocalizationManager.T("NavStock");
+            if (btnNavReports != null) btnNavReports.Text = "📈   " + LocalizationManager.T("NavReports");
+            if (btnNavAlerts != null) btnNavAlerts.Text = "🔔   " + LocalizationManager.T("NavAlerts");
 
             // Header Titles
             string titleKey = "Title" + currentScreen.ToString();
@@ -596,7 +728,12 @@ namespace Stock_Sync
             if (lblScreenTitle != null) lblScreenTitle.Text = LocalizationManager.T(titleKey);
             if (lblBreadcrumb != null) lblBreadcrumb.Text = LocalizationManager.T(breadcrumbKey);
 
-            // View 1: Orders
+            // View 1: Orders KPI Strip & Tabs
+            if (lblOrdersKpiTotalTitle != null) lblOrdersKpiTotalTitle.Text = LocalizationManager.T("ColTotal") + " " + LocalizationManager.T("TitleOrders");
+            if (lblOrdersKpiSalesTitle != null) lblOrdersKpiSalesTitle.Text = LocalizationManager.T("KpiTodaySales");
+            if (lblOrdersKpiDoneTitle != null) lblOrdersKpiDoneTitle.Text = LocalizationManager.T("Completed");
+            if (lblOrdersKpiPendingTitle != null) lblOrdersKpiPendingTitle.Text = LocalizationManager.T("Pending");
+
             if (lblOrdersCardTitle != null) lblOrdersCardTitle.Text = LocalizationManager.T("OrderHistory");
             if (btnOrdersTabAll != null) btnOrdersTabAll.Text = LocalizationManager.T("AllOrders");
             if (btnOrdersTabCompleted != null) btnOrdersTabCompleted.Text = LocalizationManager.T("Completed");
@@ -726,7 +863,7 @@ namespace Stock_Sync
         }
         #endregion
 
-        #region View 1: Orders Screen (Matching Inspiration Mockup)
+        #region View 1: Orders Screen (Matching Mockup 1: Top Strip + Modern Filter Card)
         private void BuildOrdersView()
         {
             pnlViewOrders = new Panel
@@ -736,37 +873,90 @@ namespace Stock_Sync
                 Visible = false
             };
 
-            // White Card Container
+            // 1. Top KPI Summary Strip (Mockup 1 Signature: Coral Card 1 + White Metric Cards)
+            TableLayoutPanel tlpOrdersKpis = new TableLayoutPanel
+            {
+                Dock = DockStyle.Top,
+                Height = 88,
+                ColumnCount = 4,
+                RowCount = 1,
+                BackColor = UITheme.AppBg,
+                Margin = new Padding(0, 0, 0, 14)
+            };
+            tlpOrdersKpis.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 25F));
+            tlpOrdersKpis.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 25F));
+            tlpOrdersKpis.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 25F));
+            tlpOrdersKpis.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 25F));
+
+            // Card 1: Solid Vibrant Coral-Orange (Mockup 1 Total Orders)
+            Panel pnlCoralCard = new Panel
+            {
+                Dock = DockStyle.Fill,
+                BackColor = UITheme.Primary,
+                Margin = new Padding(0, 0, 10, 12),
+                Padding = new Padding(16, 12, 16, 12)
+            };
+            lblOrdersKpiTotalTitle = new Label
+            {
+                Text = "Total Orders",
+                Font = new Font("Segoe UI", 9F, FontStyle.Regular),
+                ForeColor = Color.White,
+                Dock = DockStyle.Top,
+                Height = 20
+            };
+            lblOrdersKpiTotalVal = new Label
+            {
+                Text = "12",
+                Font = new Font("Segoe UI", 18F, FontStyle.Bold),
+                ForeColor = Color.White,
+                Dock = DockStyle.Fill
+            };
+            pnlCoralCard.Controls.Add(lblOrdersKpiTotalVal);
+            pnlCoralCard.Controls.Add(lblOrdersKpiTotalTitle);
+
+            // Card 2: Occupied / Today's Sales (White Card)
+            Panel pnlCard2 = CreateKpiMetricCard("Occupied / Today's Sales", LocalizationManager.FormatMoney(0m), out lblOrdersKpiSalesTitle, out lblOrdersKpiSalesVal);
+            // Card 3: Reserved / Completed (White Card)
+            Panel pnlCard3 = CreateKpiMetricCard("Reserved / Completed", "0", out lblOrdersKpiDoneTitle, out lblOrdersKpiDoneVal);
+            // Card 4: Available / Pending (White Card)
+            Panel pnlCard4 = CreateKpiMetricCard("Available / Pending", "0", out lblOrdersKpiPendingTitle, out lblOrdersKpiPendingVal);
+
+            tlpOrdersKpis.Controls.Add(pnlCoralCard, 0, 0);
+            tlpOrdersKpis.Controls.Add(pnlCard2, 1, 0);
+            tlpOrdersKpis.Controls.Add(pnlCard3, 2, 0);
+            tlpOrdersKpis.Controls.Add(pnlCard4, 3, 0);
+
+            // 2. Main Order History White Card Container
             Panel pnlCard = new Panel
             {
                 Dock = DockStyle.Fill,
                 BackColor = UITheme.CardBg,
-                Padding = new Padding(24)
+                Padding = new Padding(20)
             };
 
-            // Card Header
+            // Card Header (Tabs on left, Search & Date & Export on right)
             Panel pnlCardHeader = new Panel
             {
                 Dock = DockStyle.Top,
-                Height = 70,
+                Height = 65,
                 BackColor = UITheme.CardBg
             };
 
             lblOrdersCardTitle = new Label
             {
                 Text = LocalizationManager.T("OrderHistory"),
-                Font = new Font("Segoe UI", 12F, FontStyle.Bold),
+                Font = new Font("Segoe UI", 12.5F, FontStyle.Bold),
                 ForeColor = UITheme.TextMain,
                 Location = new Point(0, 0),
                 AutoSize = true
             };
 
-            // Filter Tabs (All Orders, Summary, Completed, Cancelled)
+            // Tab Pills (Mockup 1 Analytics / Subscription style)
             FlowLayoutPanel pnlFilterTabs = new FlowLayoutPanel
             {
-                Location = new Point(0, 32),
-                Height = 35,
-                Width = 500,
+                Location = new Point(0, 30),
+                Height = 32,
+                Width = 420,
                 BackColor = UITheme.CardBg
             };
 
@@ -776,11 +966,11 @@ namespace Stock_Sync
                 AutoSize = true,
                 Height = 28,
                 FlatStyle = FlatStyle.Flat,
-                BackColor = UITheme.SidebarActiveBg,
-                ForeColor = UITheme.SidebarActiveText,
+                BackColor = UITheme.PrimaryLight,
+                ForeColor = UITheme.Primary,
                 Font = new Font("Segoe UI", 9F, FontStyle.Bold),
                 Cursor = Cursors.Hand,
-                Margin = new Padding(0, 0, 10, 0)
+                Margin = new Padding(0, 0, 8, 0)
             };
             btnOrdersTabAll.FlatAppearance.BorderSize = 0;
 
@@ -794,7 +984,7 @@ namespace Stock_Sync
                 ForeColor = UITheme.TextMuted,
                 Font = new Font("Segoe UI", 9F, FontStyle.Regular),
                 Cursor = Cursors.Hand,
-                Margin = new Padding(0, 0, 10, 0)
+                Margin = new Padding(0, 0, 8, 0)
             };
             btnOrdersTabCompleted.FlatAppearance.BorderSize = 0;
 
@@ -808,12 +998,13 @@ namespace Stock_Sync
                 ForeColor = UITheme.TextMuted,
                 Font = new Font("Segoe UI", 9F, FontStyle.Regular),
                 Cursor = Cursors.Hand,
-                Margin = new Padding(0, 0, 10, 0)
+                Margin = new Padding(0, 0, 8, 0)
             };
             btnOrdersTabPending.FlatAppearance.BorderSize = 0;
 
-            Action<Button> selectTab = (selected) =>
+            Action<Button, string> selectTab = (selected, tabKey) =>
             {
+                activeOrderTab = tabKey;
                 foreach (Control c in pnlFilterTabs.Controls)
                 {
                     if (c is Button b)
@@ -823,28 +1014,48 @@ namespace Stock_Sync
                         b.Font = new Font("Segoe UI", 9F, FontStyle.Regular);
                     }
                 }
-                selected.BackColor = UITheme.SidebarActiveBg;
-                selected.ForeColor = UITheme.SidebarActiveText;
+                selected.BackColor = UITheme.PrimaryLight;
+                selected.ForeColor = UITheme.Primary;
                 selected.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
-                LoadOrdersData();
+                FilterOrdersGrid();
             };
 
-            btnOrdersTabAll.Click += (s, e) => selectTab(btnOrdersTabAll);
-            btnOrdersTabCompleted.Click += (s, e) => selectTab(btnOrdersTabCompleted);
-            btnOrdersTabPending.Click += (s, e) => selectTab(btnOrdersTabPending);
+            btnOrdersTabAll.Click += (s, e) => selectTab(btnOrdersTabAll, "All");
+            btnOrdersTabCompleted.Click += (s, e) => selectTab(btnOrdersTabCompleted, "Completed");
+            btnOrdersTabPending.Click += (s, e) => selectTab(btnOrdersTabPending, "Pending");
 
             pnlFilterTabs.Controls.Add(btnOrdersTabAll);
             pnlFilterTabs.Controls.Add(btnOrdersTabCompleted);
             pnlFilterTabs.Controls.Add(btnOrdersTabPending);
 
-            // Date Range & Export Button (Right aligned)
+            // Right-aligned Search, Date Filter & Export Button
+            txtOrdersSearch = new TextBox
+            {
+                Text = "",
+                Width = 160,
+                Font = UITheme.FontRegular,
+                Anchor = AnchorStyles.Top | AnchorStyles.Right,
+                Location = new Point(pnlCard.Width - 460, 28),
+                BackColor = UITheme.InputBg
+            };
+            txtOrdersSearch.TextChanged += (s, e) => FilterOrdersGrid();
+
+            Label lblSearchIcon = new Label
+            {
+                Text = "🔍",
+                AutoSize = true,
+                Anchor = AnchorStyles.Top | AnchorStyles.Right,
+                Location = new Point(pnlCard.Width - 485, 30),
+                Font = new Font("Segoe UI", 9F)
+            };
+
             dtpOrdersFilter = new DateTimePicker
             {
                 Format = DateTimePickerFormat.Short,
                 Value = DateTime.Today,
-                Width = 120,
+                Width = 115,
                 Anchor = AnchorStyles.Top | AnchorStyles.Right,
-                Location = new Point(pnlCard.Width - 300, 10),
+                Location = new Point(pnlCard.Width - 280, 27),
                 Font = UITheme.FontRegular
             };
 
@@ -852,8 +1063,8 @@ namespace Stock_Sync
             {
                 Text = LocalizationManager.T("ExportCsv"),
                 Anchor = AnchorStyles.Top | AnchorStyles.Right,
-                Location = new Point(pnlCard.Width - 170, 7),
-                Size = new Size(120, 32),
+                Location = new Point(pnlCard.Width - 150, 25),
+                Size = new Size(130, 30),
                 FlatStyle = FlatStyle.Flat,
                 BackColor = UITheme.Primary,
                 ForeColor = Color.White,
@@ -871,34 +1082,23 @@ namespace Stock_Sync
 
             pnlCardHeader.Controls.Add(lblOrdersCardTitle);
             pnlCardHeader.Controls.Add(pnlFilterTabs);
+            pnlCardHeader.Controls.Add(lblSearchIcon);
+            pnlCardHeader.Controls.Add(txtOrdersSearch);
             pnlCardHeader.Controls.Add(dtpOrdersFilter);
             pnlCardHeader.Controls.Add(btnExportOrders);
 
-            // DataGridView matching image
+            // DataGridView matching Mockup 1
             dgvOrders = new DataGridView
             {
                 Dock = DockStyle.Fill
             };
             UITheme.StyleDataGrid(dgvOrders);
 
-            // Custom Cell Formatting for Status pill
+            // Numeric & Currency formatting for Ethiopian Birr
             dgvOrders.CellFormatting += (s, e) =>
             {
-                if (dgvOrders.Columns[e.ColumnIndex].Name == "Status" && e.Value != null)
-                {
-                    string status = e.Value.ToString();
-                    if (status == "Delivered" || status == "Completed")
-                    {
-                        e.CellStyle.ForeColor = Color.FromArgb(3, 84, 63); // Soft dark emerald
-                        e.CellStyle.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
-                    }
-                    else if (status == "Cancelled")
-                    {
-                        e.CellStyle.ForeColor = Color.FromArgb(155, 28, 28); // Coral red
-                        e.CellStyle.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
-                    }
-                }
-                if ((dgvOrders.Columns[e.ColumnIndex].Name == "Stock Value" || dgvOrders.Columns[e.ColumnIndex].Name == "Total Payable") && e.Value != null)
+                if ((dgvOrders.Columns[e.ColumnIndex].Name == "Stock Value" || 
+                     dgvOrders.Columns[e.ColumnIndex].Name == "Total Payable") && e.Value != null)
                 {
                     if (decimal.TryParse(e.Value.ToString(), out decimal val))
                     {
@@ -907,21 +1107,21 @@ namespace Stock_Sync
                 }
             };
 
-            // Bottom Pagination Footer matching image
+            // Bottom Pagination Footer (Mockup 1 ‹ 1 2 3 4 ... 12 ›)
             Panel pnlPagination = new Panel
             {
                 Dock = DockStyle.Bottom,
-                Height = 45,
+                Height = 44,
                 BackColor = UITheme.CardBg
             };
 
             Label lblPagination = new Label
             {
-                Text = "‹   1   2   3   4  ...  12   ›",
-                Font = new Font("Segoe UI", 9.5F, FontStyle.Regular),
-                ForeColor = UITheme.TextMuted,
+                Text = "‹   [ 1 ]   2   3   4   ...   12   ›",
+                Font = new Font("Segoe UI", 9.5F, FontStyle.Bold),
+                ForeColor = UITheme.Primary,
                 AutoSize = true,
-                Location = new Point(pnlCard.Width / 2 - 80, 12),
+                Location = new Point(pnlCard.Width / 2 - 90, 12),
                 Cursor = Cursors.Hand
             };
             pnlPagination.Controls.Add(lblPagination);
@@ -931,13 +1131,115 @@ namespace Stock_Sync
             pnlCard.Controls.Add(pnlCardHeader);
 
             pnlViewOrders.Controls.Add(pnlCard);
+            pnlViewOrders.Controls.Add(tlpOrdersKpis);
+
             pnlContentContainer.Controls.Add(pnlViewOrders);
+        }
+
+        private Panel CreateKpiMetricCard(string title, string initialValue, out Label titleLabel, out Label valueLabel)
+        {
+            Panel card = new Panel
+            {
+                Dock = DockStyle.Fill,
+                BackColor = UITheme.CardBg,
+                Margin = new Padding(0, 0, 10, 12),
+                Padding = new Padding(16, 12, 16, 12)
+            };
+            card.Paint += (s, e) =>
+            {
+                using (Pen p = new Pen(UITheme.CardBorder, 1))
+                {
+                    e.Graphics.DrawRectangle(p, 0, 0, card.Width - 1, card.Height - 1);
+                }
+            };
+
+            titleLabel = new Label
+            {
+                Text = title,
+                Font = new Font("Segoe UI", 9F, FontStyle.Regular),
+                ForeColor = UITheme.TextMuted,
+                Dock = DockStyle.Top,
+                Height = 20
+            };
+
+            valueLabel = new Label
+            {
+                Text = initialValue,
+                Font = new Font("Segoe UI", 16F, FontStyle.Bold),
+                ForeColor = UITheme.TextMain,
+                Dock = DockStyle.Fill
+            };
+
+            card.Controls.Add(valueLabel);
+            card.Controls.Add(titleLabel);
+            return card;
         }
 
         private void LoadOrdersData()
         {
-            dgvOrders.DataSource = Report.FetchOrderHistory();
+            DataTable dt = Report.FetchOrderHistory();
+            dgvOrders.DataSource = dt;
             LocalizeGridHeaders(dgvOrders);
+
+            // Update KPI Strip metrics
+            if (dt != null)
+            {
+                int totalCount = dt.Rows.Count;
+                lblOrdersKpiTotalVal.Text = totalCount.ToString();
+
+                int completed = 0;
+                int pending = 0;
+                decimal totalSales = 0m;
+
+                foreach (DataRow row in dt.Rows)
+                {
+                    string status = row["Status"]?.ToString() ?? "";
+                    if (status.Equals("Delivered", StringComparison.OrdinalIgnoreCase) ||
+                        status.Equals("Completed", StringComparison.OrdinalIgnoreCase))
+                    {
+                        completed++;
+                    }
+                    else
+                    {
+                        pending++;
+                    }
+
+                    if (row.Table.Columns.Contains("Stock Value") && decimal.TryParse(row["Stock Value"]?.ToString(), out decimal sv))
+                    {
+                        totalSales += sv;
+                    }
+                }
+
+                lblOrdersKpiSalesVal.Text = LocalizationManager.FormatMoney(totalSales);
+                lblOrdersKpiDoneVal.Text = completed.ToString();
+                lblOrdersKpiPendingVal.Text = pending.ToString();
+            }
+        }
+
+        private void FilterOrdersGrid()
+        {
+            if (dgvOrders.DataSource is DataTable dt)
+            {
+                string search = txtOrdersSearch?.Text?.Trim().Replace("'", "''") ?? "";
+                string filter = "";
+
+                if (activeOrderTab == "Completed")
+                {
+                    filter = "[Status] = 'Delivered' OR [Status] = 'Completed'";
+                }
+                else if (activeOrderTab == "Pending")
+                {
+                    filter = "[Status] = 'Pending' OR [Status] = 'Processing'";
+                }
+
+                if (!string.IsNullOrEmpty(search))
+                {
+                    string searchFilter = $"[Order Name] LIKE '%{search}%' OR CONVERT([Order ID], 'System.String') LIKE '%{search}%'";
+                    filter = string.IsNullOrEmpty(filter) ? searchFilter : $"({filter}) AND ({searchFilter})";
+                }
+
+                dt.DefaultView.RowFilter = filter;
+            }
         }
         #endregion
 
@@ -990,7 +1292,7 @@ namespace Stock_Sync
                 Location = new Point(0, 24),
                 Width = 400,
                 Font = new Font("Segoe UI", 12F),
-                BackColor = Color.FromArgb(248, 250, 252)
+                BackColor = UITheme.InputBg
             };
             txtPosBarcode.KeyDown += (s, e) =>
             {
@@ -1016,11 +1318,12 @@ namespace Stock_Sync
                 Location = new Point(415, 22),
                 Size = new Size(110, 32),
                 FlatStyle = FlatStyle.Flat,
-                BackColor = Color.FromArgb(241, 245, 248),
-                ForeColor = UITheme.TextMain,
+                BackColor = UITheme.PrimaryLight,
+                ForeColor = UITheme.Primary,
                 Font = UITheme.FontRegular,
                 Cursor = Cursors.Hand
             };
+            btnClearCart.FlatAppearance.BorderSize = 0;
             btnClearCart.Click += (s, e) =>
             {
                 activeBill.Clear();
@@ -1067,7 +1370,7 @@ namespace Stock_Sync
             lblPosTotal = new Label { Text = LocalizationManager.FormatMoney(0m), Location = new Point(180, 85), Font = new Font("Segoe UI", 14F, FontStyle.Bold), ForeColor = UITheme.Primary, AutoSize = true };
 
             lblCashTitle = new Label { Text = LocalizationManager.T("CashReceived"), Location = new Point(0, 135), Font = UITheme.FontBold, ForeColor = UITheme.TextMain, AutoSize = true };
-            txtPosCashReceived = new TextBox { Location = new Point(0, 160), Width = 260, Font = new Font("Segoe UI", 12F) };
+            txtPosCashReceived = new TextBox { Location = new Point(0, 160), Width = 260, Font = new Font("Segoe UI", 12F), BackColor = UITheme.InputBg };
             txtPosCashReceived.TextChanged += (s, e) =>
             {
                 if (decimal.TryParse(txtPosCashReceived.Text, out decimal cash))
@@ -1092,7 +1395,7 @@ namespace Stock_Sync
                 Dock = DockStyle.Top,
                 Height = 46,
                 FlatStyle = FlatStyle.Flat,
-                BackColor = UITheme.Success,
+                BackColor = UITheme.Primary,
                 ForeColor = Color.White,
                 Font = new Font("Segoe UI", 11F, FontStyle.Bold),
                 Cursor = Cursors.Hand,
@@ -1152,8 +1455,8 @@ namespace Stock_Sync
                 Dock = DockStyle.Top,
                 Height = 42,
                 FlatStyle = FlatStyle.Flat,
-                BackColor = UITheme.Primary,
-                ForeColor = Color.White,
+                BackColor = UITheme.PrimaryLight,
+                ForeColor = UITheme.Primary,
                 Font = new Font("Segoe UI", 10F, FontStyle.Bold),
                 Cursor = Cursors.Hand,
                 Margin = new Padding(0, 10, 0, 0)
@@ -1280,7 +1583,7 @@ namespace Stock_Sync
             };
 
             Panel pnlSearch = new Panel { Dock = DockStyle.Top, Height = 50, BackColor = UITheme.CardBg };
-            txtProductSearch = new TextBox { Location = new Point(0, 10), Width = 300, Font = UITheme.FontRegular };
+            txtProductSearch = new TextBox { Location = new Point(0, 10), Width = 300, Font = UITheme.FontRegular, BackColor = UITheme.InputBg };
             btnProductSearch = new Button
             {
                 Text = LocalizationManager.T("Search"),
@@ -1305,8 +1608,8 @@ namespace Stock_Sync
                 Location = new Point(420, 8),
                 Size = new Size(110, 28),
                 FlatStyle = FlatStyle.Flat,
-                BackColor = UITheme.CardBorder,
-                ForeColor = UITheme.TextMain,
+                BackColor = UITheme.PrimaryLight,
+                ForeColor = UITheme.Primary,
                 Font = UITheme.FontSmall,
                 Cursor = Cursors.Hand
             };
@@ -1351,55 +1654,57 @@ namespace Stock_Sync
 
             lblProductFormTitle = new Label { Text = LocalizationManager.T("ManageProduct"), Font = UITheme.FontSubtitle, ForeColor = UITheme.TextMain, Dock = DockStyle.Top, Height = 35 };
 
-            Panel pnlFields = new Panel { Dock = DockStyle.Top, Height = 280, BackColor = UITheme.CardBg };
+            Panel pnlFields = new Panel { Dock = DockStyle.Top, Height = 250, BackColor = UITheme.CardBg };
 
-            lblProdBarcode = new Label { Text = LocalizationManager.T("Barcode"), Location = new Point(0, 10), Font = UITheme.FontBold, ForeColor = UITheme.TextMain, AutoSize = true };
-            txtProdBarcode = new TextBox { Location = new Point(0, 32), Width = 260, Font = UITheme.FontRegular };
+            lblProdBarcode = new Label { Text = LocalizationManager.T("Barcode"), Location = new Point(0, 5), Font = UITheme.FontBold, AutoSize = true };
+            txtProdBarcode = new TextBox { Location = new Point(0, 25), Width = 260, BackColor = UITheme.InputBg };
 
-            lblProdName = new Label { Text = LocalizationManager.T("ProductName"), Location = new Point(0, 70), Font = UITheme.FontBold, ForeColor = UITheme.TextMain, AutoSize = true };
-            txtProdName = new TextBox { Location = new Point(0, 92), Width = 260, Font = UITheme.FontRegular };
+            lblProdName = new Label { Text = LocalizationManager.T("ProductName"), Location = new Point(0, 65), Font = UITheme.FontBold, AutoSize = true };
+            txtProdName = new TextBox { Location = new Point(0, 85), Width = 260, BackColor = UITheme.InputBg };
 
-            lblProdCategory = new Label { Text = LocalizationManager.T("Category"), Location = new Point(0, 130), Font = UITheme.FontBold, ForeColor = UITheme.TextMain, AutoSize = true };
-            txtProdCategory = new TextBox { Location = new Point(0, 152), Width = 260, Font = UITheme.FontRegular };
+            lblProdCategory = new Label { Text = LocalizationManager.T("Category"), Location = new Point(0, 125), Font = UITheme.FontBold, AutoSize = true };
+            txtProdCategory = new TextBox { Location = new Point(0, 145), Width = 260, BackColor = UITheme.InputBg };
 
-            lblProdStatus = new Label { Text = LocalizationManager.T("Status"), Location = new Point(0, 190), Font = UITheme.FontBold, ForeColor = UITheme.TextMain, AutoSize = true };
-            cmbProdStatus = new ComboBox { Location = new Point(0, 212), Width = 260, Font = UITheme.FontRegular, DropDownStyle = ComboBoxStyle.DropDownList };
-            cmbProdStatus.Items.AddRange(new object[] { "Available", "Low Stock", "Discontinued" });
+            lblProdStatus = new Label { Text = LocalizationManager.T("Status"), Location = new Point(0, 185), Font = UITheme.FontBold, AutoSize = true };
+            cmbProdStatus = new ComboBox { Location = new Point(0, 205), Width = 260, DropDownStyle = ComboBoxStyle.DropDownList };
+            cmbProdStatus.Items.AddRange(new object[] { "Active", "Inactive" });
             cmbProdStatus.SelectedIndex = 0;
 
             pnlFields.Controls.AddRange(new Control[] { lblProdBarcode, txtProdBarcode, lblProdName, txtProdName, lblProdCategory, txtProdCategory, lblProdStatus, cmbProdStatus });
 
-            btnProductAdd = new Button { Text = LocalizationManager.T("AddNewProduct"), Dock = DockStyle.Top, Height = 38, FlatStyle = FlatStyle.Flat, BackColor = UITheme.Primary, ForeColor = Color.White, Font = UITheme.FontBold, Cursor = Cursors.Hand };
+            Panel pnlBtnGroup = new Panel { Dock = DockStyle.Top, Height = 130, BackColor = UITheme.CardBg };
+
+            btnProductAdd = new Button { Text = LocalizationManager.T("AddNewProduct"), Location = new Point(0, 5), Size = new Size(260, 36), FlatStyle = FlatStyle.Flat, BackColor = UITheme.Primary, ForeColor = Color.White, Font = UITheme.FontBold, Cursor = Cursors.Hand };
             btnProductAdd.FlatAppearance.BorderSize = 0;
             btnProductAdd.Click += (s, e) =>
             {
-                if (long.TryParse(txtProdBarcode.Text, out long bCode) && !string.IsNullOrWhiteSpace(txtProdName.Text))
+                if (long.TryParse(txtProdBarcode.Text, out long barcode) && !string.IsNullOrEmpty(txtProdName.Text))
                 {
-                    Product p = new Product { PBarcode = bCode, PName = txtProdName.Text.Trim(), PCategory = txtProdCategory.Text.Trim(), PStatus = cmbProdStatus.Text };
+                    Product p = new Product { PBarcode = barcode, PName = txtProdName.Text.Trim(), PCategory = txtProdCategory.Text.Trim(), PStatus = cmbProdStatus.Text };
                     if (p.Add())
                     {
-                        MessageBox.Show(LocalizationManager.T("MsgProdAdded"), LocalizationManager.T("MsgSuccessTitle"), MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        MessageBox.Show(LocalizationManager.T("MsgProductAdded"), LocalizationManager.T("MsgSuccessTitle"), MessageBoxButtons.OK, MessageBoxIcon.Information);
                         LoadProductsData();
                     }
                 }
             };
 
-            btnProductUpdate = new Button { Text = LocalizationManager.T("UpdateSelected"), Dock = DockStyle.Top, Height = 38, FlatStyle = FlatStyle.Flat, BackColor = UITheme.SidebarHover, ForeColor = Color.White, Font = UITheme.FontBold, Cursor = Cursors.Hand, Margin = new Padding(0, 8, 0, 0) };
+            btnProductUpdate = new Button { Text = LocalizationManager.T("UpdateSelected"), Location = new Point(0, 47), Size = new Size(260, 36), FlatStyle = FlatStyle.Flat, BackColor = UITheme.PrimaryLight, ForeColor = UITheme.Primary, Font = UITheme.FontBold, Cursor = Cursors.Hand };
             btnProductUpdate.FlatAppearance.BorderSize = 0;
             btnProductUpdate.Click += (s, e) =>
             {
-                if (selectedProductId > 0 && long.TryParse(txtProdBarcode.Text, out long bCode))
+                if (selectedProductId > 0 && long.TryParse(txtProdBarcode.Text, out long barcode))
                 {
-                    Product p = new Product { PBarcode = bCode, PName = txtProdName.Text.Trim(), PCategory = txtProdCategory.Text.Trim(), PStatus = cmbProdStatus.Text };
+                    Product p = new Product { PBarcode = barcode, PName = txtProdName.Text.Trim(), PCategory = txtProdCategory.Text.Trim(), PStatus = cmbProdStatus.Text };
                     if (p.Update(selectedProductId))
                     {
-                        MessageBox.Show(LocalizationManager.T("MsgProdUpdated"), LocalizationManager.T("MsgSuccessTitle"), MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        MessageBox.Show(LocalizationManager.T("MsgProductUpdated"), LocalizationManager.T("MsgSuccessTitle"), MessageBoxButtons.OK, MessageBoxIcon.Information);
                         LoadProductsData();
                     }
                 }
             };
 
-            btnProductDeactivate = new Button { Text = LocalizationManager.T("DeactivateProduct"), Dock = DockStyle.Top, Height = 38, FlatStyle = FlatStyle.Flat, BackColor = UITheme.Danger, ForeColor = Color.White, Font = UITheme.FontBold, Cursor = Cursors.Hand, Margin = new Padding(0, 8, 0, 0) };
+            btnProductDeactivate = new Button { Text = LocalizationManager.T("DeactivateProduct"), Location = new Point(0, 89), Size = new Size(260, 36), FlatStyle = FlatStyle.Flat, BackColor = Color.FromArgb(254, 242, 242), ForeColor = UITheme.Danger, Font = UITheme.FontBold, Cursor = Cursors.Hand };
             btnProductDeactivate.FlatAppearance.BorderSize = 0;
             btnProductDeactivate.Click += (s, e) =>
             {
@@ -1408,13 +1713,15 @@ namespace Stock_Sync
                     Product p = new Product();
                     if (p.Delete(selectedProductId))
                     {
-                        MessageBox.Show(LocalizationManager.T("MsgProdDeactivated"), LocalizationManager.T("MsgSuccessTitle"), MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        MessageBox.Show(LocalizationManager.T("MsgProductDeactivated"), LocalizationManager.T("MsgSuccessTitle"), MessageBoxButtons.OK, MessageBoxIcon.Information);
                         LoadProductsData();
                     }
                 }
             };
 
-            pnlFormCard.Controls.AddRange(new Control[] { btnProductDeactivate, btnProductUpdate, btnProductAdd, pnlFields, lblProductFormTitle });
+            pnlBtnGroup.Controls.AddRange(new Control[] { btnProductAdd, btnProductUpdate, btnProductDeactivate });
+
+            pnlFormCard.Controls.AddRange(new Control[] { pnlBtnGroup, pnlFields, lblProductFormTitle });
 
             tlp.Controls.Add(pnlGridCard, 0, 0);
             tlp.Controls.Add(pnlFormCard, 1, 0);
@@ -1430,7 +1737,7 @@ namespace Stock_Sync
         }
         #endregion
 
-        #region View 4: Stock Management
+        #region View 4: Stock Batches
         private void BuildStockView()
         {
             pnlViewStock = new Panel { Dock = DockStyle.Fill, Visible = false };
@@ -1444,11 +1751,16 @@ namespace Stock_Sync
             tlp.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 68F));
             tlp.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 32F));
 
-            // Left: Grid
-            Panel pnlGridCard = new Panel { Dock = DockStyle.Fill, BackColor = UITheme.CardBg, Padding = new Padding(20) };
+            // Left: Grid Card
+            Panel pnlGridCard = new Panel
+            {
+                Dock = DockStyle.Fill,
+                BackColor = UITheme.CardBg,
+                Padding = new Padding(20)
+            };
 
             Panel pnlSearch = new Panel { Dock = DockStyle.Top, Height = 50, BackColor = UITheme.CardBg };
-            txtStockSearch = new TextBox { Location = new Point(0, 10), Width = 300, Font = UITheme.FontRegular };
+            txtStockSearch = new TextBox { Location = new Point(0, 10), Width = 300, Font = UITheme.FontRegular, BackColor = UITheme.InputBg };
             btnStockSearch = new Button
             {
                 Text = LocalizationManager.T("Search"),
@@ -1473,8 +1785,8 @@ namespace Stock_Sync
                 Location = new Point(420, 8),
                 Size = new Size(110, 28),
                 FlatStyle = FlatStyle.Flat,
-                BackColor = UITheme.CardBorder,
-                ForeColor = UITheme.TextMain,
+                BackColor = UITheme.PrimaryLight,
+                ForeColor = UITheme.Primary,
                 Font = UITheme.FontSmall,
                 Cursor = Cursors.Hand
             };
@@ -1532,22 +1844,22 @@ namespace Stock_Sync
             Panel pnlFields = new Panel { Dock = DockStyle.Top, Height = 360, BackColor = UITheme.CardBg };
 
             lblStockPid = new Label { Text = LocalizationManager.T("ProductId"), Location = new Point(0, 5), Font = UITheme.FontBold, AutoSize = true };
-            txtStockProdId = new TextBox { Location = new Point(0, 25), Width = 260 };
+            txtStockProdId = new TextBox { Location = new Point(0, 25), Width = 260, BackColor = UITheme.InputBg };
 
             lblStockCode = new Label { Text = LocalizationManager.T("BatchCode"), Location = new Point(0, 55), Font = UITheme.FontBold, AutoSize = true };
-            txtStockCode = new TextBox { Location = new Point(0, 75), Width = 260 };
+            txtStockCode = new TextBox { Location = new Point(0, 75), Width = 260, BackColor = UITheme.InputBg };
 
             lblStockQty = new Label { Text = LocalizationManager.T("ColQuantity") + ":", Location = new Point(0, 105), Font = UITheme.FontBold, AutoSize = true };
-            txtStockQty = new TextBox { Location = new Point(0, 125), Width = 120 };
+            txtStockQty = new TextBox { Location = new Point(0, 125), Width = 120, BackColor = UITheme.InputBg };
 
             lblStockMin = new Label { Text = LocalizationManager.T("MinThreshold"), Location = new Point(140, 105), Font = UITheme.FontBold, AutoSize = true };
-            txtStockMin = new TextBox { Location = new Point(140, 125), Width = 120 };
+            txtStockMin = new TextBox { Location = new Point(140, 125), Width = 120, BackColor = UITheme.InputBg };
 
             lblStockCp = new Label { Text = LocalizationManager.T("CostPrice"), Location = new Point(0, 155), Font = UITheme.FontBold, AutoSize = true };
-            txtStockCp = new TextBox { Location = new Point(0, 175), Width = 120 };
+            txtStockCp = new TextBox { Location = new Point(0, 175), Width = 120, BackColor = UITheme.InputBg };
 
             lblStockSp = new Label { Text = LocalizationManager.T("SellingPrice"), Location = new Point(140, 155), Font = UITheme.FontBold, AutoSize = true };
-            txtStockSp = new TextBox { Location = new Point(140, 175), Width = 120 };
+            txtStockSp = new TextBox { Location = new Point(140, 175), Width = 120, BackColor = UITheme.InputBg };
 
             lblStockArrival = new Label { Text = LocalizationManager.T("ArrivalDate"), Location = new Point(0, 205), Font = UITheme.FontBold, AutoSize = true };
             dtpStockArrival = new DateTimePicker { Location = new Point(0, 225), Width = 260, Format = DateTimePickerFormat.Short };
@@ -1598,19 +1910,20 @@ namespace Stock_Sync
         }
         #endregion
 
-        #region View 5: Dashboard Analytics
+        #region View 5: Dashboard Analytics (Mockup 1 Signature Metric Strip & Charts)
         private void BuildDashboardView()
         {
             pnlViewDashboard = new Panel { Dock = DockStyle.Fill, Visible = false, AutoScroll = true };
 
-            // Top: 4 Stat Cards
+            // Top: 4 Stat Cards (First Card is Vibrant Coral Orange)
             TableLayoutPanel tlpKpis = new TableLayoutPanel
             {
                 Dock = DockStyle.Top,
-                Height = 110,
+                Height = 100,
                 ColumnCount = 4,
                 RowCount = 1,
-                BackColor = UITheme.AppBg
+                BackColor = UITheme.AppBg,
+                Margin = new Padding(0, 0, 0, 16)
             };
             tlpKpis.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 25F));
             tlpKpis.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 25F));
@@ -1627,10 +1940,32 @@ namespace Stock_Sync
             lblKpiTitle3 = new Label();
             lblKpiTitle4 = new Label();
 
-            tlpKpis.Controls.Add(CreateKpiCard(LocalizationManager.T("KpiTodaySales"), LocalizationManager.FormatMoney(0m), lblKpiTodaySales, lblKpiTitle1, Color.FromArgb(16, 185, 129)), 0, 0);
-            tlpKpis.Controls.Add(CreateKpiCard(LocalizationManager.T("KpiTodayOrders"), "0", lblKpiTodayOrders, lblKpiTitle2, UITheme.Primary), 1, 0);
-            tlpKpis.Controls.Add(CreateKpiCard(LocalizationManager.T("KpiActiveProducts"), "0", lblKpiActiveProducts, lblKpiTitle3, Color.FromArgb(99, 102, 241)), 2, 0);
-            tlpKpis.Controls.Add(CreateKpiCard(LocalizationManager.T("KpiLowStock"), "0", lblKpiLowStock, lblKpiTitle4, Color.FromArgb(239, 68, 68)), 3, 0);
+            // Card 1: Solid Vibrant Coral (Mockup 1 Highlight Card)
+            Panel pnlSalesCoralCard = new Panel
+            {
+                Dock = DockStyle.Fill,
+                BackColor = UITheme.Primary,
+                Margin = new Padding(0, 0, 10, 8),
+                Padding = new Padding(16, 12, 16, 12)
+            };
+            lblKpiTitle1.Text = LocalizationManager.T("KpiTodaySales");
+            lblKpiTitle1.Font = UITheme.FontRegular;
+            lblKpiTitle1.ForeColor = Color.White;
+            lblKpiTitle1.Dock = DockStyle.Top;
+            lblKpiTitle1.Height = 22;
+
+            lblKpiTodaySales.Text = LocalizationManager.FormatMoney(0m);
+            lblKpiTodaySales.Font = new Font("Segoe UI", 16F, FontStyle.Bold);
+            lblKpiTodaySales.ForeColor = Color.White;
+            lblKpiTodaySales.Dock = DockStyle.Fill;
+
+            pnlSalesCoralCard.Controls.Add(lblKpiTodaySales);
+            pnlSalesCoralCard.Controls.Add(lblKpiTitle1);
+
+            tlpKpis.Controls.Add(pnlSalesCoralCard, 0, 0);
+            tlpKpis.Controls.Add(CreateKpiCard(LocalizationManager.T("KpiTodayOrders"), "0", lblKpiTodayOrders, lblKpiTitle2, UITheme.TextMain), 1, 0);
+            tlpKpis.Controls.Add(CreateKpiCard(LocalizationManager.T("KpiActiveProducts"), "0", lblKpiActiveProducts, lblKpiTitle3, Color.FromArgb(79, 70, 229)), 2, 0);
+            tlpKpis.Controls.Add(CreateKpiCard(LocalizationManager.T("KpiLowStock"), "0", lblKpiLowStock, lblKpiTitle4, UITheme.Danger), 3, 0);
 
             pnlViewDashboard.Controls.Add(tlpKpis);
 
@@ -1638,7 +1973,7 @@ namespace Stock_Sync
             TableLayoutPanel tlpCharts = new TableLayoutPanel
             {
                 Dock = DockStyle.Top,
-                Height = 450,
+                Height = 460,
                 ColumnCount = 2,
                 RowCount = 1,
                 Margin = new Padding(0, 16, 0, 0)
@@ -1665,8 +2000,15 @@ namespace Stock_Sync
             {
                 Dock = DockStyle.Fill,
                 BackColor = UITheme.CardBg,
-                Margin = new Padding(6),
-                Padding = new Padding(16)
+                Margin = new Padding(0, 0, 10, 8),
+                Padding = new Padding(16, 12, 16, 12)
+            };
+            card.Paint += (s, e) =>
+            {
+                using (Pen p = new Pen(UITheme.CardBorder, 1))
+                {
+                    e.Graphics.DrawRectangle(p, 0, 0, card.Width - 1, card.Height - 1);
+                }
             };
 
             titleLabel.Text = title;
@@ -1699,7 +2041,7 @@ namespace Stock_Sync
             chartDailySales.Series.Clear();
             var s1 = chartDailySales.Series.Add("Daily Sales");
             s1.ChartType = SeriesChartType.Column;
-            s1.Color = UITheme.Primary;
+            s1.Color = UITheme.Primary; // Coral Orange Columns
             foreach (var kvp in dailySales)
             {
                 s1.Points.AddXY(kvp.Key.ToString("MM-dd"), kvp.Value);
@@ -1709,7 +2051,7 @@ namespace Stock_Sync
             chartTopSold.Series.Clear();
             var s2 = chartTopSold.Series.Add("Top Sold");
             s2.ChartType = SeriesChartType.Bar;
-            s2.Color = Color.FromArgb(16, 185, 129);
+            s2.Color = UITheme.Success;
             foreach (var kvp in topSold)
             {
                 s2.Points.AddXY(kvp.Key, kvp.Value);
@@ -1753,8 +2095,8 @@ namespace Stock_Sync
                 Location = new Point(415, 10),
                 Size = new Size(110, 28),
                 FlatStyle = FlatStyle.Flat,
-                BackColor = UITheme.CardBorder,
-                ForeColor = UITheme.TextMain,
+                BackColor = UITheme.PrimaryLight,
+                ForeColor = UITheme.Primary,
                 Font = UITheme.FontSmall,
                 Cursor = Cursors.Hand
             };
@@ -1771,7 +2113,10 @@ namespace Stock_Sync
             UITheme.StyleDataGrid(dgvReports);
             dgvReports.CellFormatting += (s, e) =>
             {
-                if ((dgvReports.Columns[e.ColumnIndex].Name == "Total Payable" || dgvReports.Columns[e.ColumnIndex].Name == "Cash Received" || dgvReports.Columns[e.ColumnIndex].Name == "Change Returned" || dgvReports.Columns[e.ColumnIndex].Name == "Total Amount") && e.Value != null)
+                if ((dgvReports.Columns[e.ColumnIndex].Name == "Total Payable" || 
+                     dgvReports.Columns[e.ColumnIndex].Name == "Cash Received" || 
+                     dgvReports.Columns[e.ColumnIndex].Name == "Change Returned" || 
+                     dgvReports.Columns[e.ColumnIndex].Name == "Total Amount") && e.Value != null)
                 {
                     if (decimal.TryParse(e.Value.ToString(), out decimal val))
                     {
@@ -1810,7 +2155,7 @@ namespace Stock_Sync
             tlp.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33.3F));
             tlp.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33.3F));
 
-            rtbLowStock = new RichTextBox { Dock = DockStyle.Fill, ReadOnly = true, BorderStyle = BorderStyle.None, BackColor = Color.FromArgb(254, 242, 242) };
+            rtbLowStock = new RichTextBox { Dock = DockStyle.Fill, ReadOnly = true, BorderStyle = BorderStyle.None, BackColor = Color.FromArgb(255, 245, 242) };
             rtbExpired = new RichTextBox { Dock = DockStyle.Fill, ReadOnly = true, BorderStyle = BorderStyle.None, BackColor = Color.FromArgb(254, 242, 242) };
             rtbNeverSold = new RichTextBox { Dock = DockStyle.Fill, ReadOnly = true, BorderStyle = BorderStyle.None, BackColor = Color.FromArgb(248, 250, 252) };
 
@@ -1829,6 +2174,13 @@ namespace Stock_Sync
         private Panel CreateAlertCard(string title, RichTextBox rtb, Label titleLabel)
         {
             Panel card = new Panel { Dock = DockStyle.Fill, BackColor = UITheme.CardBg, Padding = new Padding(16), Margin = new Padding(8) };
+            card.Paint += (s, e) =>
+            {
+                using (Pen p = new Pen(UITheme.CardBorder, 1))
+                {
+                    e.Graphics.DrawRectangle(p, 0, 0, card.Width - 1, card.Height - 1);
+                }
+            };
             titleLabel.Text = title;
             titleLabel.Font = UITheme.FontBold;
             titleLabel.ForeColor = UITheme.TextMain;
