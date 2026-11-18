@@ -8,6 +8,7 @@ namespace Stock_Sync
         public static string Username { get; set; }
         public static string Email { get; set; }
         public static string Role { get; set; }
+        public static int CurrentShiftId { get; set; }
         public static DateTime LoginTime { get; set; }
         public static DateTime LastActivityTime { get; set; }
 
@@ -23,6 +24,12 @@ namespace Stock_Sync
             Role = role;
             LoginTime = DateTime.Now;
             LastActivityTime = DateTime.Now;
+
+            try
+            {
+                CurrentShiftId = ShiftManager.StartShift(userId, username, role);
+            }
+            catch { }
         }
 
         public static void RecordActivity()
@@ -38,6 +45,16 @@ namespace Stock_Sync
 
         public static void Clear()
         {
+            if (CurrentShiftId > 0)
+            {
+                try
+                {
+                    ShiftManager.EndShift(CurrentShiftId);
+                }
+                catch { }
+                CurrentShiftId = 0;
+            }
+
             UserId = 0;
             Username = null;
             Email = null;

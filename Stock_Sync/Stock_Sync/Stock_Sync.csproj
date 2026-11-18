@@ -57,6 +57,7 @@
     <Compile Include="Logger.cs" />
     <Compile Include="CsvExportHelper.cs" />
     <Compile Include="MobileServer.cs" />
+    <Compile Include="ShiftManager.cs" />
     <Compile Include="Bill.cs" />
     <Compile Include="BillForm.cs">
       <SubType>Form</SubType>

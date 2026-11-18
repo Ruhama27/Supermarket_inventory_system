@@ -210,9 +210,10 @@ namespace Stock_Sync
                 try
                 {
                     // 1. Insert master order record
+                    ShiftManager.EnsureSchema();
                     string orderQuery = @"
-                    INSERT INTO Orders (Date, Subtotal, TotalPayable, CashReceived, ChangeReturned, PaymentMethod, DiscountAmount, TaxAmount, CashierEmail)
-                    VALUES (@date, @subtotal, @total, @cash, @change, @payMethod, @discount, @tax, @cashier);
+                    INSERT INTO Orders (Date, Subtotal, TotalPayable, CashReceived, ChangeReturned, PaymentMethod, DiscountAmount, TaxAmount, CashierEmail, CashierName, ShiftID)
+                    VALUES (@date, @subtotal, @total, @cash, @change, @payMethod, @discount, @tax, @cashier, @cashierName, @shiftId);
                     SELECT CAST(SCOPE_IDENTITY() AS INT);";
 
                     using (SqlCommand cmd = new SqlCommand(orderQuery, conn, transaction))
@@ -225,7 +226,9 @@ namespace Stock_Sync
                         cmd.Parameters.AddWithValue("@payMethod", paymentMethod ?? "Cash");
                         cmd.Parameters.AddWithValue("@discount", discountAmount);
                         cmd.Parameters.AddWithValue("@tax", taxAmount);
-                        cmd.Parameters.AddWithValue("@cashier", (object)Session.Email ?? DBNull.Value);
+                        cmd.Parameters.AddWithValue("@cashier", (object)Session.Username ?? DBNull.Value);
+                        cmd.Parameters.AddWithValue("@cashierName", (object)Session.Username ?? "Staff");
+                        cmd.Parameters.AddWithValue("@shiftId", Session.CurrentShiftId > 0 ? (object)Session.CurrentShiftId : DBNull.Value);
 
                         createdOrderId = (int)cmd.ExecuteScalar();
                         LastSavedOrderId = createdOrderId;
@@ -303,7 +306,19 @@ namespace Stock_Sync
                     }
 
                     transaction.Commit();
-                    Logger.LogInfo($"Sale completed successfully: Order #{createdOrderId}, Total: {totalPayable:C}, Cashier: {Session.Email}");
+                    Logger.LogInfo($"Sale completed successfully: Order #{createdOrderId}, Total: {totalPayable:C}, Cashier: {Session.Username}");
+                    
+                    try
+                    {
+                        if (Session.CurrentShiftId > 0)
+                        {
+                            ShiftManager.RecordSale(Session.CurrentShiftId, totalPayable);
+                        }
+                        string staffRole = Session.IsAdmin ? "Admin" : "Staff";
+                        ShiftManager.LogActivity($"{staffRole} '{Session.Username}' sold Order #{createdOrderId} for {LocalizationManager.FormatMoney(totalPayable)} ({paymentMethod})");
+                    }
+                    catch { }
+
                     Clear();
                     return true;
                 }

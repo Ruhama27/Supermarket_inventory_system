@@ -1508,11 +1508,26 @@ namespace Stock_Sync
                 {
                     e.Handled = true;
                     e.SuppressKeyPress = true;
-                    if (long.TryParse(txtPosBarcode.Text.Trim(), out long bCode))
+                    string scanned = txtPosBarcode.Text.Trim();
+                    if (!string.IsNullOrEmpty(scanned))
                     {
-                        if (activeBill.ScanBarcode(bCode))
+                        long bCode = 0;
+                        if (!long.TryParse(scanned, out bCode))
                         {
-                            RefreshPosCart();
+                            // Resilient QR / 2D barcode parser: extract numbers from QR payload
+                            var match = System.Text.RegularExpressions.Regex.Match(scanned, @"\d+");
+                            if (match.Success)
+                            {
+                                long.TryParse(match.Value, out bCode);
+                            }
+                        }
+
+                        if (bCode > 0)
+                        {
+                            if (activeBill.ScanBarcode(bCode))
+                            {
+                                RefreshPosCart();
+                            }
                         }
                     }
                     txtPosBarcode.Clear();
