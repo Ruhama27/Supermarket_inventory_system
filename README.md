@@ -48,7 +48,7 @@ Stock-Sync streamlines retail operations by combining barcode scanning, multi-ba
 - **Full Ge'ez Ethiopic Script Coverage**: Native Ethiopic Unicode characters for natural, accessible operation in retail stores and supermarkets in Ethiopia.
 
 ### 🔒 Enterprise-Grade Security
-- **PBKDF2 Password Hashing**: Implements industry-standard `Rfc2898DeriveBytes` with **10,000 iterations**, a **128-bit cryptographic salt**, and a **256-bit derived key**.
+- **Targeted PBKDF2 Password Hashing**: Implements industry-standard `Rfc2898DeriveBytes` with **10,000 iterations**, a **128-bit cryptographic salt**, and a **256-bit derived key** specifically for passwords. Usernames remain standard unhashed plain text (`admin`, `staff`) for clean auditing, while user passwords are cryptographically secured.
 - **Constant-Time Comparison**: Protects authentication against timing attack vulnerabilities.
 - **Transparent Migration**: Seamlessly upgrades legacy plaintext user passwords to salted PBKDF2 hashes on successful login.
 - **Role-Based Access Control (RBAC)**: Distinguishes between **Admin** (complete system authority) and **Staff Cashier** (POS, sales, and catalog views).

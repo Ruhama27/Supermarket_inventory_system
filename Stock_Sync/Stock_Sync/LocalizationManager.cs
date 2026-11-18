@@ -196,6 +196,8 @@ namespace Stock_Sync
             { "SignInAdmin", "Sign In As Admin" },
             { "SignInStaff", "Sign In As Staff" },
             { "Email", "Email" },
+            { "Username", "Username" },
+            { "EnterUsernamePassword", "Please enter both username and password." },
             { "Password", "Password" },
             { "Or", "- OR -" }
         };
@@ -335,6 +337,8 @@ namespace Stock_Sync
             { "SignInAdmin", "እንደ አስተዳዳሪ ግባ" },
             { "SignInStaff", "እንደ ሠራተኛ ግባ" },
             { "Email", "ኢሜይል" },
+            { "Username", "የተጠቃሚ ስም" },
+            { "EnterUsernamePassword", "እባክዎ የተጠቃሚ ስም እና የይለፍ ቃል ያስገቡ።" },
             { "Password", "የይለፍ ቃል" },
             { "Or", "- ወይም -" }
         };

@@ -9,7 +9,7 @@ namespace Stock_Sync
     {
         private Button btnLangToggle;
         private Label lblCardBadge;
-        private Label lblEmailTag;
+        private Label lblUsernameTag;
         private Label lblPasswordTag;
         private Label lblSubtitle;
 
@@ -132,16 +132,16 @@ namespace Stock_Sync
             };
             groupBox1.Controls.Add(lblSubtitle);
 
-            // 3. Email Input & Label
-            lblEmailTag = new Label
+            // 3. Username Input & Label (Plain text, no hashing on username)
+            lblUsernameTag = new Label
             {
                 Font = new Font("Segoe UI", 9F, FontStyle.Bold),
                 ForeColor = Color.FromArgb(71, 85, 105),
                 Location = new Point(40, 155),
                 Size = new Size(460, 20),
-                Text = "Email Address / መለያ ኢሜይል"
+                Text = "Username"
             };
-            groupBox1.Controls.Add(lblEmailTag);
+            groupBox1.Controls.Add(lblUsernameTag);
 
             this.email.Location = new Point(40, 178);
             this.email.Size = new Size(460, 38);
@@ -151,14 +151,14 @@ namespace Stock_Sync
             this.email.ForeColor = UITheme.TextMain;
             this.email.UseSystemPasswordChar = false;
 
-            // 4. Password Input & Label
+            // 4. Password Input & Label (Hashed with PBKDF2)
             lblPasswordTag = new Label
             {
                 Font = new Font("Segoe UI", 9F, FontStyle.Bold),
                 ForeColor = Color.FromArgb(71, 85, 105),
                 Location = new Point(40, 226),
                 Size = new Size(460, 20),
-                Text = "Password / የይለፍ ቃል"
+                Text = "Password"
             };
             groupBox1.Controls.Add(lblPasswordTag);
 
@@ -236,36 +236,35 @@ namespace Stock_Sync
                     : "ይከታተሉ . ያስተዳድሩ . ያሳድጉ — የሱፐርማርኬት ሲስተም";
             }
 
-            if (lblEmailTag != null)
+            if (lblUsernameTag != null)
             {
-                lblEmailTag.Text = isEng ? "Email Address" : "የኢሜይል አድራሻ";
+                lblUsernameTag.Text = LocalizationManager.T("Username");
             }
 
             if (lblPasswordTag != null)
             {
-                lblPasswordTag.Text = isEng ? "Password" : "የይለፍ ቃል";
+                lblPasswordTag.Text = LocalizationManager.T("Password");
             }
         }
 
         private void button1_Click(object sender, EventArgs e)
         {
-            string emailInput = email.Text.Trim();
+            string usernameInput = email.Text.Trim();
             string passwordInput = password.Text.Trim();
 
-            if (string.IsNullOrEmpty(emailInput) || string.IsNullOrEmpty(passwordInput))
+            if (string.IsNullOrEmpty(usernameInput) || string.IsNullOrEmpty(passwordInput))
             {
-                string msg = LocalizationManager.CurrentLanguage == AppLanguage.English 
-                    ? "Please enter both email and password." 
-                    : "እባክዎ ኢሜይል እና የይለፍ ቃል ያስገቡ።";
+                string msg = LocalizationManager.T("EnterUsernamePassword");
                 MessageBox.Show(msg, "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
-            var user = Login.Authenticate(emailInput, passwordInput);
+            // Note: usernameInput is plain text (NOT hashed). Only password is encrypted/hashed.
+            var user = Login.Authenticate(usernameInput, passwordInput);
 
             if (user != null && user.Role == "Staff")
             {
-                Session.StartSession(user.UserId, user.Email, user.Role);
+                Session.StartSession(user.UserId, user.Username, user.Role);
                 MainDashboardForm dashboard = new MainDashboardForm();
                 this.Hide();
                 dashboard.Show();
@@ -283,23 +282,22 @@ namespace Stock_Sync
 
         private void button2_Click(object sender, EventArgs e)
         {
-            string emailInput = email.Text.Trim();
+            string usernameInput = email.Text.Trim();
             string passwordInput = password.Text.Trim();
 
-            if (string.IsNullOrEmpty(emailInput) || string.IsNullOrEmpty(passwordInput))
+            if (string.IsNullOrEmpty(usernameInput) || string.IsNullOrEmpty(passwordInput))
             {
-                string msg = LocalizationManager.CurrentLanguage == AppLanguage.English 
-                    ? "Please enter both email and password." 
-                    : "እባክዎ ኢሜይል እና የይለፍ ቃል ያስገቡ።";
+                string msg = LocalizationManager.T("EnterUsernamePassword");
                 MessageBox.Show(msg, "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
-            var user = Login.Authenticate(emailInput, passwordInput);
+            // Note: usernameInput is plain text (NOT hashed). Only password is encrypted/hashed.
+            var user = Login.Authenticate(usernameInput, passwordInput);
 
             if (user != null && user.Role == "Admin")
             {
-                Session.StartSession(user.UserId, user.Email, user.Role);
+                Session.StartSession(user.UserId, user.Username, user.Role);
                 MainDashboardForm dashboard = new MainDashboardForm();
                 this.Hide();
                 dashboard.Show();

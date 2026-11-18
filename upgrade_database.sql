@@ -8,6 +8,21 @@ BEGIN
 END
 GO
 
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Users') AND name = 'Username')
+BEGIN
+    ALTER TABLE Users ADD Username NVARCHAR(100) NULL;
+END
+GO
+
+UPDATE Users 
+SET Username = CASE 
+    WHEN Email = 'admin@gmail.com' THEN 'admin'
+    WHEN Email = 'staff@gmail.com' THEN 'staff'
+    ELSE SUBSTRING(Email, 1, CHARINDEX('@', Email + '@') - 1)
+END 
+WHERE Username IS NULL OR Username = '';
+GO
+
 -- 2. Add IsActive to Products if not exists
 IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Products') AND name = 'IsActive')
 BEGIN

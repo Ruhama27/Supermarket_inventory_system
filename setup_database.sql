@@ -12,14 +12,15 @@ IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'Users')
 BEGIN
     CREATE TABLE Users (
         UserID INT IDENTITY(1,1) PRIMARY KEY,
+        Username NVARCHAR(100) NULL,
         Email NVARCHAR(100) NOT NULL UNIQUE,
-        Password NVARCHAR(100) NOT NULL,
+        Password NVARCHAR(256) NOT NULL,
         Role NVARCHAR(50) NOT NULL
     );
 
-    INSERT INTO Users (Email, Password, Role) VALUES
-    ('admin@gmail.com', 'admin123', 'Admin'),
-    ('staff@gmail.com', 'staff123', 'Staff');
+    INSERT INTO Users (Username, Email, Password, Role) VALUES
+    ('admin', 'admin@gmail.com', 'admin123', 'Admin'),
+    ('staff', 'staff@gmail.com', 'staff123', 'Staff');
 END
 GO
 
