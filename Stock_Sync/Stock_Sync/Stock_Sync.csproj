@@ -59,6 +59,7 @@
     <Compile Include="MobileServer.cs" />
     <Compile Include="ShiftManager.cs" />
     <Compile Include="StaffUserManager.cs" />
+    <Compile Include="Models\ComboBoxItem.cs" />
     <Compile Include="Models\ProductModel.cs" />
     <Compile Include="Models\StockBatchModel.cs" />
     <Compile Include="Models\SupplierModel.cs" />

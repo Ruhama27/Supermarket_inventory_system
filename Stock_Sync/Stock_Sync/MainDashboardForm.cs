@@ -15,16 +15,17 @@ namespace Stock_Sync
     {
         private enum ScreenType
         {
-            Orders,
+            Dashboard,
             Pos,
             Products,
             Stock,
-            Dashboard,
+            Orders,
+            Suppliers,
             Reports,
             Alerts
         }
 
-        private ScreenType currentScreen = ScreenType.Orders;
+        private ScreenType currentScreen = ScreenType.Dashboard;
 
         // UI Layout Panels
         private Panel pnlSidebar;
@@ -48,23 +49,79 @@ namespace Stock_Sync
 
         // Sidebar Navigation Buttons
         private Button btnNavDashboard;
-        private Button btnNavOrders;
         private Button btnNavPos;
         private Button btnNavProducts;
         private Button btnNavStock;
+        private Button btnNavOrders;
+        private Button btnNavSuppliers;
         private Button btnNavReports;
         private Button btnNavAlerts;
         private Button btnNavLogout;
         private List<Button> navButtons = new List<Button>();
 
         // Views (Sub-panels)
-        private Panel pnlViewOrders;
+        private Panel pnlViewDashboard;
         private Panel pnlViewPos;
         private Panel pnlViewProducts;
         private Panel pnlViewStock;
-        private Panel pnlViewDashboard;
+        private Panel pnlViewOrders;
+        private Panel pnlViewSuppliers;
         private Panel pnlViewReports;
         private Panel pnlViewAlerts;
+
+        // View: Suppliers Controls
+        private DataGridView dgvSuppliers;
+        private TextBox txtSupplierSearch;
+        private Button btnSupplierSearch;
+        private Button btnSupplierExport;
+        private Label lblSupplierFormTitle;
+        private TextBox txtSupplierName;
+        private TextBox txtSupplierContact;
+        private TextBox txtSupplierPhone;
+        private TextBox txtSupplierEmail;
+        private TextBox txtSupplierAddress;
+        private Button btnSupplierAdd;
+        private Button btnSupplierUpdate;
+        private Button btnSupplierDelete;
+        private Button btnSupplierClear;
+        private int selectedSupplierId = -1;
+
+        // Dashboard Sub-navigation & Analytics Tabs
+        private Button btnDashTabCharts;
+        private Button btnDashTabRestock;
+        private Button btnDashTabOrders;
+        private Button btnDashTabExpiry;
+        private Button btnDashTabShifts;
+        private List<Button> dashTabButtons = new List<Button>();
+        private Panel pnlDashTabContent;
+        private Panel pnlDashCharts;
+        private Panel pnlDashRestock;
+        private Panel pnlDashOrders;
+        private Panel pnlDashExpiry;
+        private Panel pnlDashShifts;
+        private DataGridView dgvDashRestock;
+        private DataGridView dgvDashOrders;
+        private DataGridView dgvDashExpiry;
+        private DataGridView dgvDashShifts;
+
+        // POS Payment Method
+        private ComboBox cmbPosPaymentMethod;
+
+        // Enhanced Products Controls
+        private Label lblProdBrand;
+        private Label lblProdUnit;
+        private TextBox txtProdBrand;
+        private ComboBox cmbProdUnit;
+        private ComboBox cmbProductFilterCategory;
+        private Button btnProductClear;
+
+        // Enhanced Stock Controls
+        private Label lblStockSupplier;
+        private ComboBox cmbStockProduct;
+        private ComboBox cmbStockSupplier;
+        private Button btnStockUpdate;
+        private Button btnStockDelete;
+        private Button btnStockClear;
 
         // View 1: Orders Screen Controls (Matching Mockup 1)
         private Label lblOrdersKpiTotalTitle;
@@ -124,7 +181,7 @@ namespace Stock_Sync
         private Label lblProdStatus;
         private TextBox txtProdBarcode;
         private TextBox txtProdName;
-        private TextBox txtProdCategory;
+        private ComboBox cmbProdCategory;
         private ComboBox cmbProdStatus;
         private Button btnProductAdd;
         private Button btnProductUpdate;
@@ -144,7 +201,6 @@ namespace Stock_Sync
         private Label lblStockCp;
         private Label lblStockSp;
         private Label lblStockArrival;
-        private TextBox txtStockProdId;
         private TextBox txtStockCode;
         private TextBox txtStockQty;
         private TextBox txtStockMin;
@@ -192,8 +248,8 @@ namespace Stock_Sync
             // Subscribe to language switcher events
             LocalizationManager.OnLanguageChanged += ApplyLanguage;
 
-            // Load initial view (Orders Screen to match Mockup 1)
-            SwitchView(ScreenType.Orders);
+            // Load initial view: Dashboard for Admin, POS for Staff
+            SwitchView(Session.IsAdmin ? ScreenType.Dashboard : ScreenType.Pos);
 
             // Apply active localization
             ApplyLanguage();
@@ -277,11 +333,12 @@ namespace Stock_Sync
             };
 
             // Build all sub-views
-            BuildOrdersView();
+            BuildDashboardView();
             BuildPosView();
             BuildProductsView();
             BuildStockView();
-            BuildDashboardView();
+            BuildOrdersView();
+            BuildSuppliersView();
             BuildReportsView();
             BuildAlertsView();
 
@@ -447,10 +504,11 @@ namespace Stock_Sync
             };
 
             btnNavDashboard = CreateNavButton("⊞   " + LocalizationManager.T("NavDashboard"));
-            btnNavOrders = CreateNavButton("🧾   " + LocalizationManager.T("NavOrders"));
-            btnNavPos = CreateNavButton("🍽   " + LocalizationManager.T("NavPos"));
+            btnNavPos = CreateNavButton("🛒   " + LocalizationManager.T("NavPos"));
             btnNavProducts = CreateNavButton("📦   " + LocalizationManager.T("NavProducts"));
             btnNavStock = CreateNavButton("📋   " + LocalizationManager.T("NavStock"));
+            btnNavOrders = CreateNavButton("🧾   " + LocalizationManager.T("NavOrders"));
+            btnNavSuppliers = CreateNavButton("🚚   " + LocalizationManager.T("NavSuppliers"));
             btnNavReports = CreateNavButton("📈   " + LocalizationManager.T("NavReports"));
 
             // Section 2: Others
@@ -469,21 +527,32 @@ namespace Stock_Sync
 
             // Navigation Click Handlers
             btnNavDashboard.Click += (s, e) => SwitchView(ScreenType.Dashboard);
-            btnNavOrders.Click += (s, e) => SwitchView(ScreenType.Orders);
             btnNavPos.Click += (s, e) => SwitchView(ScreenType.Pos);
             btnNavProducts.Click += (s, e) => SwitchView(ScreenType.Products);
             btnNavStock.Click += (s, e) => SwitchView(ScreenType.Stock);
+            btnNavOrders.Click += (s, e) => SwitchView(ScreenType.Orders);
+            btnNavSuppliers.Click += (s, e) => SwitchView(ScreenType.Suppliers);
             btnNavReports.Click += (s, e) => SwitchView(ScreenType.Reports);
             btnNavAlerts.Click += (s, e) => SwitchView(ScreenType.Alerts);
+
+            // Hide Admin-only navigation buttons from Cashier Staff
+            if (!Session.IsAdmin)
+            {
+                btnNavDashboard.Visible = false;
+                btnNavStock.Visible = false;
+                btnNavSuppliers.Visible = false;
+                btnNavReports.Visible = false;
+            }
 
             // Add to navigation panel in reverse order for Dock = Top
             pnlNavContainer.Controls.Add(btnNavAlerts);
             pnlNavContainer.Controls.Add(lblSectionOthers);
             pnlNavContainer.Controls.Add(btnNavReports);
+            pnlNavContainer.Controls.Add(btnNavSuppliers);
+            pnlNavContainer.Controls.Add(btnNavOrders);
             pnlNavContainer.Controls.Add(btnNavStock);
             pnlNavContainer.Controls.Add(btnNavProducts);
             pnlNavContainer.Controls.Add(btnNavPos);
-            pnlNavContainer.Controls.Add(btnNavOrders);
             pnlNavContainer.Controls.Add(btnNavDashboard);
             pnlNavContainer.Controls.Add(lblSectionMenu);
 
@@ -1060,6 +1129,7 @@ namespace Stock_Sync
             pnlViewPos.Visible = false;
             pnlViewProducts.Visible = false;
             pnlViewStock.Visible = false;
+            if (pnlViewSuppliers != null) pnlViewSuppliers.Visible = false;
             pnlViewDashboard.Visible = false;
             pnlViewReports.Visible = false;
             pnlViewAlerts.Visible = false;
@@ -1105,6 +1175,13 @@ namespace Stock_Sync
                     titleKey = "TitleStock";
                     breadcrumbKey = "BreadcrumbStock";
                     LoadStockData();
+                    break;
+                case ScreenType.Suppliers:
+                    targetView = pnlViewSuppliers;
+                    activeBtn = btnNavSuppliers;
+                    titleKey = "TitleSuppliers";
+                    breadcrumbKey = "BreadcrumbSuppliers";
+                    LoadSuppliersData();
                     break;
                 case ScreenType.Dashboard:
                     targetView = pnlViewDashboard;
@@ -1184,10 +1261,11 @@ namespace Stock_Sync
 
             // Sidebar Nav
             if (btnNavDashboard != null) btnNavDashboard.Text = "⊞   " + LocalizationManager.T("NavDashboard");
-            if (btnNavOrders != null) btnNavOrders.Text = "🧾   " + LocalizationManager.T("NavOrders");
-            if (btnNavPos != null) btnNavPos.Text = "🍽   " + LocalizationManager.T("NavPos");
+            if (btnNavPos != null) btnNavPos.Text = "🛒   " + LocalizationManager.T("NavPos");
             if (btnNavProducts != null) btnNavProducts.Text = "📦   " + LocalizationManager.T("NavProducts");
             if (btnNavStock != null) btnNavStock.Text = "📋   " + LocalizationManager.T("NavStock");
+            if (btnNavOrders != null) btnNavOrders.Text = "🧾   " + LocalizationManager.T("NavOrders");
+            if (btnNavSuppliers != null) btnNavSuppliers.Text = "🚚   " + LocalizationManager.T("NavSuppliers");
             if (btnNavReports != null) btnNavReports.Text = "📈   " + LocalizationManager.T("NavReports");
             if (btnNavAlerts != null) btnNavAlerts.Text = "🔔   " + LocalizationManager.T("NavAlerts");
 
@@ -1842,7 +1920,7 @@ namespace Stock_Sync
                 Height = 35
             };
 
-            Panel pnlAmounts = new Panel { Dock = DockStyle.Top, Height = 250, BackColor = UITheme.CardBg };
+            Panel pnlAmounts = new Panel { Dock = DockStyle.Top, Height = 310, BackColor = UITheme.CardBg };
 
             lblSubTitle = new Label { Text = LocalizationManager.T("Subtotal"), Location = new Point(0, 15), Font = UITheme.FontRegular, ForeColor = UITheme.TextMuted, AutoSize = true };
             lblPosSubtotal = new Label { Text = LocalizationManager.FormatMoney(0m), Location = new Point(180, 15), Font = UITheme.FontBold, ForeColor = UITheme.TextMain, AutoSize = true };
@@ -1850,11 +1928,24 @@ namespace Stock_Sync
             lblTaxTitle = new Label { Text = LocalizationManager.T("Tax"), Location = new Point(0, 45), Font = UITheme.FontRegular, ForeColor = UITheme.TextMuted, AutoSize = true };
             Label lblTaxVal = new Label { Text = LocalizationManager.FormatMoney(0m), Location = new Point(180, 45), Font = UITheme.FontBold, ForeColor = UITheme.TextMain, AutoSize = true };
 
-            lblPayableTitle = new Label { Text = LocalizationManager.T("TotalPayable"), Location = new Point(0, 85), Font = new Font("Segoe UI", 12F, FontStyle.Bold), ForeColor = UITheme.Primary, AutoSize = true };
-            lblPosTotal = new Label { Text = LocalizationManager.FormatMoney(0m), Location = new Point(180, 85), Font = new Font("Segoe UI", 14F, FontStyle.Bold), ForeColor = UITheme.Primary, AutoSize = true };
+            lblPayableTitle = new Label { Text = LocalizationManager.T("TotalPayable"), Location = new Point(0, 80), Font = new Font("Segoe UI", 12F, FontStyle.Bold), ForeColor = UITheme.Primary, AutoSize = true };
+            lblPosTotal = new Label { Text = LocalizationManager.FormatMoney(0m), Location = new Point(180, 80), Font = new Font("Segoe UI", 14F, FontStyle.Bold), ForeColor = UITheme.Primary, AutoSize = true };
 
-            lblCashTitle = new Label { Text = LocalizationManager.T("CashReceived"), Location = new Point(0, 135), Font = UITheme.FontBold, ForeColor = UITheme.TextMain, AutoSize = true };
-            txtPosCashReceived = new TextBox { Location = new Point(0, 160), Width = 260, Font = new Font("Segoe UI", 12F), BackColor = UITheme.InputBg };
+            Label lblPaymentMethodTitle = new Label { Text = LocalizationManager.T("ColPayment") + ":", Location = new Point(0, 115), Font = UITheme.FontBold, ForeColor = UITheme.TextMain, AutoSize = true };
+            cmbPosPaymentMethod = new ComboBox { Location = new Point(0, 138), Width = 260, DropDownStyle = ComboBoxStyle.DropDownList, Font = new Font("Segoe UI", 10F) };
+            cmbPosPaymentMethod.Items.AddRange(new object[] { "Cash", "Telebirr", "CBE Birr / Card" });
+            cmbPosPaymentMethod.SelectedIndex = 0;
+            cmbPosPaymentMethod.SelectedIndexChanged += (s, e) =>
+            {
+                if (cmbPosPaymentMethod.SelectedIndex > 0)
+                {
+                    decimal sub = activeBill.CalculateSubtotal();
+                    txtPosCashReceived.Text = sub.ToString("0.00");
+                }
+            };
+
+            lblCashTitle = new Label { Text = LocalizationManager.T("CashReceived"), Location = new Point(0, 175), Font = UITheme.FontBold, ForeColor = UITheme.TextMain, AutoSize = true };
+            txtPosCashReceived = new TextBox { Location = new Point(0, 198), Width = 260, Font = new Font("Segoe UI", 12F), BackColor = UITheme.InputBg };
             txtPosCashReceived.TextChanged += (s, e) =>
             {
                 if (decimal.TryParse(txtPosCashReceived.Text, out decimal cash))
@@ -1868,10 +1959,10 @@ namespace Stock_Sync
                 }
             };
 
-            lblChangeTitle = new Label { Text = LocalizationManager.T("ChangeDue"), Location = new Point(0, 205), Font = UITheme.FontBold, ForeColor = UITheme.TextMain, AutoSize = true };
-            lblPosChange = new Label { Text = LocalizationManager.FormatMoney(0m), Location = new Point(180, 205), Font = new Font("Segoe UI", 12F, FontStyle.Bold), ForeColor = UITheme.Success, AutoSize = true };
+            lblChangeTitle = new Label { Text = LocalizationManager.T("ChangeDue"), Location = new Point(0, 245), Font = UITheme.FontBold, ForeColor = UITheme.TextMain, AutoSize = true };
+            lblPosChange = new Label { Text = LocalizationManager.FormatMoney(0m), Location = new Point(180, 245), Font = new Font("Segoe UI", 12F, FontStyle.Bold), ForeColor = UITheme.Success, AutoSize = true };
 
-            pnlAmounts.Controls.AddRange(new Control[] { lblSubTitle, lblPosSubtotal, lblTaxTitle, lblTaxVal, lblPayableTitle, lblPosTotal, lblCashTitle, txtPosCashReceived, lblChangeTitle, lblPosChange });
+            pnlAmounts.Controls.AddRange(new Control[] { lblSubTitle, lblPosSubtotal, lblTaxTitle, lblTaxVal, lblPayableTitle, lblPosTotal, lblPaymentMethodTitle, cmbPosPaymentMethod, lblCashTitle, txtPosCashReceived, lblChangeTitle, lblPosChange });
 
             btnCompleteSale = new Button
             {
@@ -1911,7 +2002,8 @@ namespace Stock_Sync
                 decimal changeDue = cashReceived - payable;
                 var itemsCopy = activeBill.Items.Select(x => new BillItem { Product = x.Product, Quantity = x.Quantity, Price = x.Price }).ToList();
 
-                if (activeBill.SaveCart(cashReceived, changeDue, "Cash", 0m, 0m, out int orderId))
+                string chosenPayment = cmbPosPaymentMethod?.Text ?? "Cash";
+                if (activeBill.SaveCart(cashReceived, changeDue, chosenPayment, 0m, 0m, out int orderId))
                 {
                     lastCheckoutItems = itemsCopy;
                     lastCheckoutOrderId = orderId;
@@ -2067,12 +2159,12 @@ namespace Stock_Sync
             };
 
             Panel pnlSearch = new Panel { Dock = DockStyle.Top, Height = 50, BackColor = UITheme.CardBg };
-            txtProductSearch = new TextBox { Location = new Point(0, 10), Width = 300, Font = UITheme.FontRegular, BackColor = UITheme.InputBg };
+            txtProductSearch = new TextBox { Location = new Point(0, 10), Width = 220, Font = UITheme.FontRegular, BackColor = UITheme.InputBg };
             btnProductSearch = new Button
             {
                 Text = LocalizationManager.T("Search"),
-                Location = new Point(310, 8),
-                Size = new Size(100, 28),
+                Location = new Point(225, 8),
+                Size = new Size(80, 28),
                 FlatStyle = FlatStyle.Flat,
                 BackColor = UITheme.Primary,
                 ForeColor = Color.White,
@@ -2080,17 +2172,18 @@ namespace Stock_Sync
                 Cursor = Cursors.Hand
             };
             btnProductSearch.FlatAppearance.BorderSize = 0;
-            btnProductSearch.Click += (s, e) =>
-            {
-                dgvProducts.DataSource = Product.SearchProducts(txtProductSearch.Text.Trim());
-                LocalizeGridHeaders(dgvProducts);
-            };
+            btnProductSearch.Click += (s, e) => LoadProductsData(txtProductSearch.Text.Trim(), cmbProductFilterCategory?.Text);
+
+            cmbProductFilterCategory = new ComboBox { Location = new Point(315, 9), Width = 150, DropDownStyle = ComboBoxStyle.DropDownList, Font = UITheme.FontSmall };
+            cmbProductFilterCategory.Items.Add("All Categories");
+            cmbProductFilterCategory.SelectedIndex = 0;
+            cmbProductFilterCategory.SelectedIndexChanged += (s, e) => LoadProductsData(txtProductSearch.Text.Trim(), cmbProductFilterCategory.Text);
 
             btnProductExport = new Button
             {
                 Text = LocalizationManager.T("ExportCsv"),
-                Location = new Point(420, 8),
-                Size = new Size(110, 28),
+                Location = new Point(475, 8),
+                Size = new Size(100, 28),
                 FlatStyle = FlatStyle.Flat,
                 BackColor = UITheme.PrimaryLight,
                 ForeColor = UITheme.Primary,
@@ -2104,7 +2197,7 @@ namespace Stock_Sync
                     CsvExportHelper.ExportToCsv(dt, "Products_Catalog.csv");
             };
 
-            pnlSearch.Controls.AddRange(new Control[] { txtProductSearch, btnProductSearch, btnProductExport });
+            pnlSearch.Controls.AddRange(new Control[] { txtProductSearch, btnProductSearch, cmbProductFilterCategory, btnProductExport });
 
             dgvProducts = new DataGridView { Dock = DockStyle.Fill };
             UITheme.StyleDataGrid(dgvProducts);
@@ -2116,10 +2209,12 @@ namespace Stock_Sync
                     if (row.Cells["ID"].Value != DBNull.Value)
                     {
                         selectedProductId = Convert.ToInt32(row.Cells["ID"].Value);
-                        txtProdBarcode.Text = row.Cells["Barcode"].Value.ToString();
-                        txtProdName.Text = row.Cells["Product Name"].Value.ToString();
-                        txtProdCategory.Text = row.Cells["Product Category"].Value.ToString();
-                        cmbProdStatus.Text = row.Cells["Product Status"].Value.ToString();
+                        txtProdBarcode.Text = row.Cells["Barcode"].Value?.ToString() ?? "";
+                        txtProdName.Text = row.Cells["Product Name"].Value?.ToString() ?? "";
+                        cmbProdCategory.Text = row.Cells["Category"].Value?.ToString() ?? "";
+                        txtProdBrand.Text = row.Cells["Brand"].Value?.ToString() ?? "";
+                        cmbProdUnit.Text = row.Cells["Unit"].Value?.ToString() ?? "Pcs";
+                        cmbProdStatus.Text = row.Cells["Status"].Value?.ToString() ?? "Available";
                     }
                 }
             };
@@ -2138,25 +2233,41 @@ namespace Stock_Sync
 
             lblProductFormTitle = new Label { Text = LocalizationManager.T("ManageProduct"), Font = UITheme.FontSubtitle, ForeColor = UITheme.TextMain, Dock = DockStyle.Top, Height = 35 };
 
-            Panel pnlFields = new Panel { Dock = DockStyle.Top, Height = 250, BackColor = UITheme.CardBg };
+            Panel pnlFields = new Panel { Dock = DockStyle.Top, Height = 350, BackColor = UITheme.CardBg };
 
             lblProdBarcode = new Label { Text = LocalizationManager.T("Barcode"), Location = new Point(0, 5), Font = UITheme.FontBold, AutoSize = true };
             txtProdBarcode = new TextBox { Location = new Point(0, 25), Width = 260, BackColor = UITheme.InputBg };
 
-            lblProdName = new Label { Text = LocalizationManager.T("ProductName"), Location = new Point(0, 65), Font = UITheme.FontBold, AutoSize = true };
-            txtProdName = new TextBox { Location = new Point(0, 85), Width = 260, BackColor = UITheme.InputBg };
+            lblProdName = new Label { Text = LocalizationManager.T("ProductName"), Location = new Point(0, 60), Font = UITheme.FontBold, AutoSize = true };
+            txtProdName = new TextBox { Location = new Point(0, 80), Width = 260, BackColor = UITheme.InputBg };
 
-            lblProdCategory = new Label { Text = LocalizationManager.T("Category"), Location = new Point(0, 125), Font = UITheme.FontBold, AutoSize = true };
-            txtProdCategory = new TextBox { Location = new Point(0, 145), Width = 260, BackColor = UITheme.InputBg };
+            lblProdCategory = new Label { Text = LocalizationManager.T("Category"), Location = new Point(0, 115), Font = UITheme.FontBold, AutoSize = true };
+            cmbProdCategory = new ComboBox { Location = new Point(0, 135), Width = 260, DropDownStyle = ComboBoxStyle.DropDown };
+            cmbProdCategory.Items.AddRange(new object[] { "Dairy", "Bakery", "Beverages", "Snacks", "Produce", "Canned Goods", "Household", "Personal Care", "Meat & Poultry" });
 
-            lblProdStatus = new Label { Text = LocalizationManager.T("Status"), Location = new Point(0, 185), Font = UITheme.FontBold, AutoSize = true };
-            cmbProdStatus = new ComboBox { Location = new Point(0, 205), Width = 260, DropDownStyle = ComboBoxStyle.DropDownList };
-            cmbProdStatus.Items.AddRange(new object[] { "Active", "Inactive" });
+            lblProdBrand = new Label { Text = LocalizationManager.T("Brand"), Location = new Point(0, 170), Font = UITheme.FontBold, AutoSize = true };
+            txtProdBrand = new TextBox { Location = new Point(0, 190), Width = 260, BackColor = UITheme.InputBg };
+
+            lblProdUnit = new Label { Text = LocalizationManager.T("Unit"), Location = new Point(0, 225), Font = UITheme.FontBold, AutoSize = true };
+            cmbProdUnit = new ComboBox { Location = new Point(0, 245), Width = 260, DropDownStyle = ComboBoxStyle.DropDownList };
+            cmbProdUnit.Items.AddRange(new object[] { "Pcs", "Kg", "Litre", "Pack", "Box", "Bottle", "Loaf", "Bag", "Can" });
+            cmbProdUnit.SelectedIndex = 0;
+
+            lblProdStatus = new Label { Text = LocalizationManager.T("Status"), Location = new Point(0, 280), Font = UITheme.FontBold, AutoSize = true };
+            cmbProdStatus = new ComboBox { Location = new Point(0, 300), Width = 260, DropDownStyle = ComboBoxStyle.DropDownList };
+            cmbProdStatus.Items.AddRange(new object[] { "Available", "Inactive" });
             cmbProdStatus.SelectedIndex = 0;
 
-            pnlFields.Controls.AddRange(new Control[] { lblProdBarcode, txtProdBarcode, lblProdName, txtProdName, lblProdCategory, txtProdCategory, lblProdStatus, cmbProdStatus });
+            pnlFields.Controls.AddRange(new Control[] { 
+                lblProdBarcode, txtProdBarcode, 
+                lblProdName, txtProdName, 
+                lblProdCategory, cmbProdCategory, 
+                lblProdBrand, txtProdBrand, 
+                lblProdUnit, cmbProdUnit, 
+                lblProdStatus, cmbProdStatus 
+            });
 
-            Panel pnlBtnGroup = new Panel { Dock = DockStyle.Top, Height = 130, BackColor = UITheme.CardBg };
+            Panel pnlBtnGroup = new Panel { Dock = DockStyle.Top, Height = 175, BackColor = UITheme.CardBg };
 
             btnProductAdd = new Button { Text = LocalizationManager.T("AddNewProduct"), Location = new Point(0, 5), Size = new Size(260, 36), FlatStyle = FlatStyle.Flat, BackColor = UITheme.Primary, ForeColor = Color.White, Font = UITheme.FontBold, Cursor = Cursors.Hand };
             btnProductAdd.FlatAppearance.BorderSize = 0;
@@ -2164,46 +2275,87 @@ namespace Stock_Sync
             {
                 if (long.TryParse(txtProdBarcode.Text, out long barcode) && !string.IsNullOrEmpty(txtProdName.Text))
                 {
-                    Product p = new Product { PBarcode = barcode, PName = txtProdName.Text.Trim(), PCategory = txtProdCategory.Text.Trim(), PStatus = cmbProdStatus.Text };
-                    if (p.Add())
+                    var prod = new Models.ProductModel
+                    {
+                        Barcode = barcode,
+                        Name = txtProdName.Text.Trim(),
+                        Category = cmbProdCategory.Text.Trim(),
+                        Brand = txtProdBrand.Text.Trim(),
+                        Unit = cmbProdUnit.Text.Trim(),
+                        Status = cmbProdStatus.Text
+                    };
+                    var repo = new Data.ProductRepository();
+                    if (repo.Add(prod, out string err))
                     {
                         MessageBox.Show(LocalizationManager.T("MsgProductAdded"), LocalizationManager.T("MsgSuccessTitle"), MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        ClearProductForm();
                         LoadProductsData();
+                        PopulateStockFormDropdowns();
                     }
+                    else
+                    {
+                        MessageBox.Show(err, "Notice", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    }
+                }
+                else
+                {
+                    MessageBox.Show("Please enter valid numeric barcode and product name.", "Input Required", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 }
             };
 
-            btnProductUpdate = new Button { Text = LocalizationManager.T("UpdateSelected"), Location = new Point(0, 47), Size = new Size(260, 36), FlatStyle = FlatStyle.Flat, BackColor = UITheme.PrimaryLight, ForeColor = UITheme.Primary, Font = UITheme.FontBold, Cursor = Cursors.Hand };
+            btnProductUpdate = new Button { Text = LocalizationManager.T("UpdateSelected"), Location = new Point(0, 46), Size = new Size(260, 36), FlatStyle = FlatStyle.Flat, BackColor = UITheme.PrimaryLight, ForeColor = UITheme.Primary, Font = UITheme.FontBold, Cursor = Cursors.Hand };
             btnProductUpdate.FlatAppearance.BorderSize = 0;
             btnProductUpdate.Click += (s, e) =>
             {
                 if (selectedProductId > 0 && long.TryParse(txtProdBarcode.Text, out long barcode))
                 {
-                    Product p = new Product { PBarcode = barcode, PName = txtProdName.Text.Trim(), PCategory = txtProdCategory.Text.Trim(), PStatus = cmbProdStatus.Text };
-                    if (p.Update(selectedProductId))
+                    var prod = new Models.ProductModel
+                    {
+                        Id = selectedProductId,
+                        Barcode = barcode,
+                        Name = txtProdName.Text.Trim(),
+                        Category = cmbProdCategory.Text.Trim(),
+                        Brand = txtProdBrand.Text.Trim(),
+                        Unit = cmbProdUnit.Text.Trim(),
+                        Status = cmbProdStatus.Text,
+                        IsActive = (cmbProdStatus.Text != "Inactive")
+                    };
+                    var repo = new Data.ProductRepository();
+                    if (repo.Update(prod, out string err))
                     {
                         MessageBox.Show(LocalizationManager.T("MsgProductUpdated"), LocalizationManager.T("MsgSuccessTitle"), MessageBoxButtons.OK, MessageBoxIcon.Information);
                         LoadProductsData();
+                        PopulateStockFormDropdowns();
+                    }
+                    else
+                    {
+                        MessageBox.Show(err, "Notice", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     }
                 }
             };
 
-            btnProductDeactivate = new Button { Text = LocalizationManager.T("DeactivateProduct"), Location = new Point(0, 89), Size = new Size(260, 36), FlatStyle = FlatStyle.Flat, BackColor = Color.FromArgb(254, 242, 242), ForeColor = UITheme.Danger, Font = UITheme.FontBold, Cursor = Cursors.Hand };
+            btnProductDeactivate = new Button { Text = LocalizationManager.T("DeactivateProduct"), Location = new Point(0, 87), Size = new Size(260, 36), FlatStyle = FlatStyle.Flat, BackColor = Color.FromArgb(254, 242, 242), ForeColor = UITheme.Danger, Font = UITheme.FontBold, Cursor = Cursors.Hand };
             btnProductDeactivate.FlatAppearance.BorderSize = 0;
             btnProductDeactivate.Click += (s, e) =>
             {
                 if (selectedProductId > 0)
                 {
-                    Product p = new Product();
-                    if (p.Delete(selectedProductId))
+                    var repo = new Data.ProductRepository();
+                    if (repo.Delete(selectedProductId, out string err))
                     {
                         MessageBox.Show(LocalizationManager.T("MsgProductDeactivated"), LocalizationManager.T("MsgSuccessTitle"), MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        ClearProductForm();
                         LoadProductsData();
+                        PopulateStockFormDropdowns();
                     }
                 }
             };
 
-            pnlBtnGroup.Controls.AddRange(new Control[] { btnProductAdd, btnProductUpdate, btnProductDeactivate });
+            btnProductClear = new Button { Text = "🔄 Clear", Location = new Point(0, 128), Size = new Size(260, 32), FlatStyle = FlatStyle.Flat, BackColor = Color.FromArgb(241, 245, 249), ForeColor = UITheme.TextMuted, Font = UITheme.FontBold, Cursor = Cursors.Hand };
+            btnProductClear.FlatAppearance.BorderSize = 0;
+            btnProductClear.Click += (s, e) => ClearProductForm();
+
+            pnlBtnGroup.Controls.AddRange(new Control[] { btnProductAdd, btnProductUpdate, btnProductDeactivate, btnProductClear });
 
             pnlFormCard.Controls.AddRange(new Control[] { pnlBtnGroup, pnlFields, lblProductFormTitle });
 
@@ -2214,10 +2366,82 @@ namespace Stock_Sync
             pnlContentContainer.Controls.Add(pnlViewProducts);
         }
 
-        private void LoadProductsData()
+        private void ClearProductForm()
         {
-            dgvProducts.DataSource = Product.ViewAll();
-            LocalizeGridHeaders(dgvProducts);
+            selectedProductId = -1;
+            txtProdBarcode?.Clear();
+            txtProdName?.Clear();
+            if (cmbProdCategory != null) cmbProdCategory.Text = "";
+            txtProdBrand?.Clear();
+            if (cmbProdUnit != null && cmbProdUnit.Items.Count > 0) cmbProdUnit.SelectedIndex = 0;
+            if (cmbProdStatus != null && cmbProdStatus.Items.Count > 0) cmbProdStatus.SelectedIndex = 0;
+        }
+
+        private void LoadProductsData(string search = "", string categoryFilter = "")
+        {
+            DataTable dt = new DataTable();
+            try
+            {
+                using (var conn = DBHelper.GetConnection())
+                {
+                    conn.Open();
+                    string q = @"
+                    SELECT 
+                        p.ID, 
+                        p.Barcode, 
+                        p.PName AS [Product Name], 
+                        ISNULL(p.Category, 'Uncategorized') AS [Category], 
+                        ISNULL(p.Brand, '-') AS [Brand],
+                        ISNULL(p.Unit, 'Pcs') AS [Unit],
+                        p.PStatus AS [Status], 
+                        ISNULL(SUM(s.quantity), 0) AS [Stock Quantity],
+                        ISNULL(MAX(s.sp_unit), 0.00) AS [Price],
+                        p.DateAdded AS [Date Added]
+                    FROM Products p
+                    LEFT JOIN Stocks s ON p.ID = s.barcode_id AND s.IsActive = 1
+                    WHERE p.IsActive = 1";
+
+                    if (!string.IsNullOrEmpty(search))
+                    {
+                        q += " AND (p.PName LIKE @Search OR CAST(p.Barcode AS NVARCHAR) LIKE @Search)";
+                    }
+                    if (!string.IsNullOrEmpty(categoryFilter) && categoryFilter != "All Categories")
+                    {
+                        q += " AND p.Category = @Cat";
+                    }
+
+                    q += @" GROUP BY p.ID, p.Barcode, p.PName, p.Category, p.Brand, p.Unit, p.PStatus, p.DateAdded
+                           ORDER BY p.ID DESC";
+
+                    using (var cmd = new System.Data.SqlClient.SqlCommand(q, conn))
+                    {
+                        if (!string.IsNullOrEmpty(search)) cmd.Parameters.AddWithValue("@Search", $"%{search}%");
+                        if (!string.IsNullOrEmpty(categoryFilter) && categoryFilter != "All Categories") cmd.Parameters.AddWithValue("@Cat", categoryFilter);
+                        using (var da = new System.Data.SqlClient.SqlDataAdapter(cmd))
+                        {
+                            da.Fill(dt);
+                        }
+                    }
+                }
+
+                dgvProducts.DataSource = dt;
+                LocalizeGridHeaders(dgvProducts);
+
+                // Populate category filter dropdown if empty
+                if (cmbProductFilterCategory != null && cmbProductFilterCategory.Items.Count <= 1)
+                {
+                    var catList = new Data.ProductRepository().GetDistinctCategories();
+                    foreach (var c in catList)
+                    {
+                        if (!cmbProductFilterCategory.Items.Contains(c))
+                            cmbProductFilterCategory.Items.Add(c);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError("Error loading products", ex);
+            }
         }
         #endregion
 
@@ -2257,11 +2481,7 @@ namespace Stock_Sync
                 Cursor = Cursors.Hand
             };
             btnStockSearch.FlatAppearance.BorderSize = 0;
-            btnStockSearch.Click += (s, e) =>
-            {
-                dgvStock.DataSource = Stock.SearchStocks(txtStockSearch.Text.Trim());
-                LocalizeGridHeaders(dgvStock);
-            };
+            btnStockSearch.Click += (s, e) => LoadStockData(txtStockSearch.Text.Trim());
 
             btnStockExport = new Button
             {
@@ -2303,10 +2523,21 @@ namespace Stock_Sync
                     if (row.Cells["Stock Id"].Value != DBNull.Value)
                     {
                         selectedStockId = Convert.ToInt32(row.Cells["Stock Id"].Value);
-                        txtStockCode.Text = row.Cells["Stock Code"].Value.ToString();
-                        txtStockQty.Text = row.Cells["Quantity"].Value.ToString();
-                        txtStockCp.Text = row.Cells["Cost Price/Unit"].Value.ToString();
-                        txtStockSp.Text = row.Cells["Selling Price/Unit"].Value.ToString();
+                        txtStockCode.Text = row.Cells["Stock Code"].Value?.ToString() ?? "";
+                        txtStockQty.Text = row.Cells["Quantity"].Value?.ToString() ?? "";
+                        txtStockCp.Text = row.Cells["Cost Price/Unit"].Value?.ToString() ?? "";
+                        txtStockSp.Text = row.Cells["Selling Price/Unit"].Value?.ToString() ?? "";
+
+                        // Select corresponding product in combo
+                        long barcode = row.Cells["Barcode"].Value != DBNull.Value ? Convert.ToInt64(row.Cells["Barcode"].Value) : 0;
+                        for (int i = 0; i < cmbStockProduct.Items.Count; i++)
+                        {
+                            if (cmbStockProduct.Items[i] is ComboBoxItem item && item.Text.Contains(barcode.ToString()))
+                            {
+                                cmbStockProduct.SelectedIndex = i;
+                                break;
+                            }
+                        }
                     }
                 }
             };
@@ -2314,7 +2545,7 @@ namespace Stock_Sync
             pnlGridCard.Controls.Add(dgvStock);
             pnlGridCard.Controls.Add(pnlSearch);
 
-            // Right: Add Stock Batch
+            // Right: Add / Manage Stock Batch
             Panel pnlFormCard = new Panel
             {
                 Dock = DockStyle.Fill,
@@ -2325,60 +2556,150 @@ namespace Stock_Sync
 
             lblStockFormTitle = new Label { Text = LocalizationManager.T("ManageStockBatch"), Font = UITheme.FontSubtitle, ForeColor = UITheme.TextMain, Dock = DockStyle.Top, Height = 35 };
 
-            Panel pnlFields = new Panel { Dock = DockStyle.Top, Height = 360, BackColor = UITheme.CardBg };
+            Panel pnlFields = new Panel { Dock = DockStyle.Top, Height = 380, BackColor = UITheme.CardBg };
 
-            lblStockPid = new Label { Text = LocalizationManager.T("ProductId"), Location = new Point(0, 5), Font = UITheme.FontBold, AutoSize = true };
-            txtStockProdId = new TextBox { Location = new Point(0, 25), Width = 260, BackColor = UITheme.InputBg };
+            lblStockPid = new Label { Text = LocalizationManager.T("NavProducts") + ":", Location = new Point(0, 5), Font = UITheme.FontBold, AutoSize = true };
+            cmbStockProduct = new ComboBox { Location = new Point(0, 25), Width = 260, DropDownStyle = ComboBoxStyle.DropDownList };
 
             lblStockCode = new Label { Text = LocalizationManager.T("BatchCode"), Location = new Point(0, 55), Font = UITheme.FontBold, AutoSize = true };
             txtStockCode = new TextBox { Location = new Point(0, 75), Width = 260, BackColor = UITheme.InputBg };
 
-            lblStockQty = new Label { Text = LocalizationManager.T("ColQuantity") + ":", Location = new Point(0, 105), Font = UITheme.FontBold, AutoSize = true };
-            txtStockQty = new TextBox { Location = new Point(0, 125), Width = 120, BackColor = UITheme.InputBg };
+            lblStockSupplier = new Label { Text = LocalizationManager.T("Supplier") + ":", Location = new Point(0, 105), Font = UITheme.FontBold, AutoSize = true };
+            cmbStockSupplier = new ComboBox { Location = new Point(0, 125), Width = 260, DropDownStyle = ComboBoxStyle.DropDownList };
 
-            lblStockMin = new Label { Text = LocalizationManager.T("MinThreshold"), Location = new Point(140, 105), Font = UITheme.FontBold, AutoSize = true };
-            txtStockMin = new TextBox { Location = new Point(140, 125), Width = 120, BackColor = UITheme.InputBg };
+            lblStockQty = new Label { Text = LocalizationManager.T("ColQuantity") + ":", Location = new Point(0, 155), Font = UITheme.FontBold, AutoSize = true };
+            txtStockQty = new TextBox { Location = new Point(0, 175), Width = 120, BackColor = UITheme.InputBg };
 
-            lblStockCp = new Label { Text = LocalizationManager.T("CostPrice"), Location = new Point(0, 155), Font = UITheme.FontBold, AutoSize = true };
-            txtStockCp = new TextBox { Location = new Point(0, 175), Width = 120, BackColor = UITheme.InputBg };
+            lblStockMin = new Label { Text = LocalizationManager.T("MinThreshold"), Location = new Point(140, 155), Font = UITheme.FontBold, AutoSize = true };
+            txtStockMin = new TextBox { Location = new Point(140, 175), Width = 120, BackColor = UITheme.InputBg, Text = "5" };
 
-            lblStockSp = new Label { Text = LocalizationManager.T("SellingPrice"), Location = new Point(140, 155), Font = UITheme.FontBold, AutoSize = true };
-            txtStockSp = new TextBox { Location = new Point(140, 175), Width = 120, BackColor = UITheme.InputBg };
+            lblStockCp = new Label { Text = LocalizationManager.T("CostPrice"), Location = new Point(0, 205), Font = UITheme.FontBold, AutoSize = true };
+            txtStockCp = new TextBox { Location = new Point(0, 225), Width = 120, BackColor = UITheme.InputBg, Text = "0.00" };
 
-            lblStockArrival = new Label { Text = LocalizationManager.T("ArrivalDate"), Location = new Point(0, 205), Font = UITheme.FontBold, AutoSize = true };
-            dtpStockArrival = new DateTimePicker { Location = new Point(0, 225), Width = 260, Format = DateTimePickerFormat.Short };
+            lblStockSp = new Label { Text = LocalizationManager.T("SellingPrice"), Location = new Point(140, 205), Font = UITheme.FontBold, AutoSize = true };
+            txtStockSp = new TextBox { Location = new Point(140, 225), Width = 120, BackColor = UITheme.InputBg, Text = "0.00" };
 
-            chkStockHasExpiry = new CheckBox { Text = LocalizationManager.T("HasExpiryDate"), Location = new Point(0, 260), Font = UITheme.FontBold, AutoSize = true };
-            dtpStockExpiry = new DateTimePicker { Location = new Point(0, 285), Width = 260, Format = DateTimePickerFormat.Short };
+            lblStockArrival = new Label { Text = LocalizationManager.T("ArrivalDate"), Location = new Point(0, 255), Font = UITheme.FontBold, AutoSize = true };
+            dtpStockArrival = new DateTimePicker { Location = new Point(0, 275), Width = 260, Format = DateTimePickerFormat.Short };
 
-            pnlFields.Controls.AddRange(new Control[] { lblStockPid, txtStockProdId, lblStockCode, txtStockCode, lblStockQty, txtStockQty, lblStockMin, txtStockMin, lblStockCp, txtStockCp, lblStockSp, txtStockSp, lblStockArrival, dtpStockArrival, chkStockHasExpiry, dtpStockExpiry });
+            chkStockHasExpiry = new CheckBox { Text = LocalizationManager.T("HasExpiryDate"), Location = new Point(0, 305), Font = UITheme.FontBold, AutoSize = true };
+            dtpStockExpiry = new DateTimePicker { Location = new Point(0, 330), Width = 260, Format = DateTimePickerFormat.Short };
 
-            btnStockAdd = new Button { Text = LocalizationManager.T("SaveStockBatch"), Dock = DockStyle.Top, Height = 38, FlatStyle = FlatStyle.Flat, BackColor = UITheme.Primary, ForeColor = Color.White, Font = UITheme.FontBold, Cursor = Cursors.Hand };
+            pnlFields.Controls.AddRange(new Control[] { 
+                lblStockPid, cmbStockProduct, 
+                lblStockCode, txtStockCode, 
+                lblStockSupplier, cmbStockSupplier,
+                lblStockQty, txtStockQty, 
+                lblStockMin, txtStockMin, 
+                lblStockCp, txtStockCp, 
+                lblStockSp, txtStockSp, 
+                lblStockArrival, dtpStockArrival, 
+                chkStockHasExpiry, dtpStockExpiry 
+            });
+
+            Panel pnlBtnGroup = new Panel { Dock = DockStyle.Top, Height = 175, BackColor = UITheme.CardBg };
+
+            btnStockAdd = new Button { Text = LocalizationManager.T("SaveStockBatch"), Location = new Point(0, 5), Size = new Size(260, 36), FlatStyle = FlatStyle.Flat, BackColor = UITheme.Primary, ForeColor = Color.White, Font = UITheme.FontBold, Cursor = Cursors.Hand };
             btnStockAdd.FlatAppearance.BorderSize = 0;
             btnStockAdd.Click += (s, e) =>
             {
-                if (int.TryParse(txtStockProdId.Text, out int pid) && int.TryParse(txtStockQty.Text, out int qty) && decimal.TryParse(txtStockSp.Text, out decimal sp))
+                if (cmbStockProduct.SelectedItem is ComboBoxItem prodItem && int.TryParse(txtStockQty.Text, out int qty) && decimal.TryParse(txtStockSp.Text, out decimal sp))
                 {
-                    Stock st = new Stock
+                    int pid = (int)prodItem.Value;
+                    int? supId = cmbStockSupplier.SelectedItem is ComboBoxItem sItem ? (int?)sItem.Value : null;
+
+                    var batch = new Models.StockBatchModel
                     {
-                        Barcode_id = pid,
-                        Stock_code = txtStockCode.Text.Trim(),
+                        BarcodeId = pid,
+                        StockCode = txtStockCode.Text.Trim(),
+                        SupplierId = supId,
                         Quantity = qty,
-                        Minimum_stock = int.TryParse(txtStockMin.Text, out int min) ? min : 5,
-                        Cp_unit = decimal.TryParse(txtStockCp.Text, out decimal cp) ? cp : 0.0m,
-                        Sp_unit = sp,
-                        Arrival_date = dtpStockArrival.Value,
-                        Expirey_Date = chkStockHasExpiry.Checked ? (DateTime?)dtpStockExpiry.Value : null
+                        MinimumStock = int.TryParse(txtStockMin.Text, out int min) ? min : 5,
+                        CostPrice = decimal.TryParse(txtStockCp.Text, out decimal cp) ? cp : 0m,
+                        SellingPrice = sp,
+                        ArrivalDate = dtpStockArrival.Value,
+                        ExpiryDate = chkStockHasExpiry.Checked ? (DateTime?)dtpStockExpiry.Value : null
                     };
-                    if (st.Add())
+
+                    var repo = new Data.StockRepository();
+                    if (repo.AddBatch(batch, out string err))
                     {
                         MessageBox.Show(LocalizationManager.T("MsgStockAdded"), LocalizationManager.T("MsgSuccessTitle"), MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        ClearStockForm();
                         LoadStockData();
+                    }
+                    else
+                    {
+                        MessageBox.Show(err, "Notice", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    }
+                }
+                else
+                {
+                    MessageBox.Show("Please select a product and enter valid numeric quantity and price.", "Input Required", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
+            };
+
+            btnStockUpdate = new Button { Text = "✏️ Update Batch", Location = new Point(0, 46), Size = new Size(260, 36), FlatStyle = FlatStyle.Flat, BackColor = UITheme.PrimaryLight, ForeColor = UITheme.Primary, Font = UITheme.FontBold, Cursor = Cursors.Hand };
+            btnStockUpdate.FlatAppearance.BorderSize = 0;
+            btnStockUpdate.Click += (s, e) =>
+            {
+                if (selectedStockId > 0 && cmbStockProduct.SelectedItem is ComboBoxItem prodItem && int.TryParse(txtStockQty.Text, out int qty) && decimal.TryParse(txtStockSp.Text, out decimal sp))
+                {
+                    int pid = (int)prodItem.Value;
+                    int? supId = cmbStockSupplier.SelectedItem is ComboBoxItem sItem ? (int?)sItem.Value : null;
+
+                    var batch = new Models.StockBatchModel
+                    {
+                        StockId = selectedStockId,
+                        BarcodeId = pid,
+                        StockCode = txtStockCode.Text.Trim(),
+                        SupplierId = supId,
+                        Quantity = qty,
+                        MinimumStock = int.TryParse(txtStockMin.Text, out int min) ? min : 5,
+                        CostPrice = decimal.TryParse(txtStockCp.Text, out decimal cp) ? cp : 0m,
+                        SellingPrice = sp,
+                        ArrivalDate = dtpStockArrival.Value,
+                        ExpiryDate = chkStockHasExpiry.Checked ? (DateTime?)dtpStockExpiry.Value : null
+                    };
+
+                    var repo = new Data.StockRepository();
+                    if (repo.UpdateBatch(batch, out string err))
+                    {
+                        MessageBox.Show("Stock batch updated successfully!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        LoadStockData();
+                    }
+                    else
+                    {
+                        MessageBox.Show(err, "Notice", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     }
                 }
             };
 
-            pnlFormCard.Controls.AddRange(new Control[] { btnStockAdd, pnlFields, lblStockFormTitle });
+            btnStockDelete = new Button { Text = "🗑️ Delete Batch", Location = new Point(0, 87), Size = new Size(260, 36), FlatStyle = FlatStyle.Flat, BackColor = Color.FromArgb(254, 242, 242), ForeColor = UITheme.Danger, Font = UITheme.FontBold, Cursor = Cursors.Hand };
+            btnStockDelete.FlatAppearance.BorderSize = 0;
+            btnStockDelete.Click += (s, e) =>
+            {
+                if (selectedStockId > 0)
+                {
+                    if (MessageBox.Show("Are you sure you want to delete this batch?", "Confirm", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
+                    {
+                        var repo = new Data.StockRepository();
+                        if (repo.DeleteBatch(selectedStockId, out string err))
+                        {
+                            ClearStockForm();
+                            LoadStockData();
+                        }
+                    }
+                }
+            };
+
+            btnStockClear = new Button { Text = "🔄 Clear", Location = new Point(0, 128), Size = new Size(260, 32), FlatStyle = FlatStyle.Flat, BackColor = Color.FromArgb(241, 245, 249), ForeColor = UITheme.TextMuted, Font = UITheme.FontBold, Cursor = Cursors.Hand };
+            btnStockClear.FlatAppearance.BorderSize = 0;
+            btnStockClear.Click += (s, e) => ClearStockForm();
+
+            pnlBtnGroup.Controls.AddRange(new Control[] { btnStockAdd, btnStockUpdate, btnStockDelete, btnStockClear });
+
+            pnlFormCard.Controls.AddRange(new Control[] { pnlBtnGroup, pnlFields, lblStockFormTitle });
 
             tlp.Controls.Add(pnlGridCard, 0, 0);
             tlp.Controls.Add(pnlFormCard, 1, 0);
@@ -2387,19 +2708,359 @@ namespace Stock_Sync
             pnlContentContainer.Controls.Add(pnlViewStock);
         }
 
-        private void LoadStockData()
+        private void ClearStockForm()
         {
-            dgvStock.DataSource = Stock.ViewAll();
-            LocalizeGridHeaders(dgvStock);
+            selectedStockId = -1;
+            txtStockCode?.Clear();
+            txtStockQty?.Clear();
+            if (txtStockMin != null) txtStockMin.Text = "5";
+            if (txtStockCp != null) txtStockCp.Text = "0.00";
+            if (txtStockSp != null) txtStockSp.Text = "0.00";
+            if (chkStockHasExpiry != null) chkStockHasExpiry.Checked = false;
+        }
+
+        private void PopulateStockFormDropdowns()
+        {
+            try
+            {
+                if (cmbStockProduct != null)
+                {
+                    cmbStockProduct.Items.Clear();
+                    var prods = new Data.ProductRepository().GetAll(activeOnly: true);
+                    foreach (var p in prods)
+                    {
+                        cmbStockProduct.Items.Add(new ComboBoxItem { Text = $"{p.Name} [{p.Barcode}]", Value = p.Id });
+                    }
+                    if (cmbStockProduct.Items.Count > 0) cmbStockProduct.SelectedIndex = 0;
+                }
+
+                if (cmbStockSupplier != null)
+                {
+                    cmbStockSupplier.Items.Clear();
+                    var sups = new Data.SupplierRepository().GetAll(activeOnly: true);
+                    foreach (var s in sups)
+                    {
+                        cmbStockSupplier.Items.Add(new ComboBoxItem { Text = s.SupplierName, Value = s.SupplierId });
+                    }
+                    if (cmbStockSupplier.Items.Count > 0) cmbStockSupplier.SelectedIndex = 0;
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError("Error populating stock dropdowns", ex);
+            }
+        }
+
+        private void LoadStockData(string filter = "")
+        {
+            DataTable dt = new DataTable();
+            try
+            {
+                using (var conn = DBHelper.GetConnection())
+                {
+                    conn.Open();
+                    string q = @"
+                    SELECT 
+                        s.stock_id AS [Stock Id], 
+                        p.Barcode, 
+                        p.PName AS [Product Name], 
+                        s.stock_code AS [Stock Code], 
+                        ISNULL(sup.SupplierName, 'Direct') AS [Supplier],
+                        s.quantity AS Quantity, 
+                        s.cp_unit AS [Cost Price/Unit], 
+                        s.sp_unit AS [Selling Price/Unit], 
+                        s.arrival_date AS [Arrival Date],
+                        s.expiry_date AS [Expiry Date],
+                        s.date_added AS [Date Added]
+                    FROM Stocks s
+                    INNER JOIN Products p ON s.barcode_id = p.ID
+                    LEFT JOIN Suppliers sup ON s.supplier_id = sup.SupplierID
+                    WHERE s.IsActive = 1 AND p.IsActive = 1";
+
+                    if (!string.IsNullOrEmpty(filter))
+                    {
+                        q += " AND (p.PName LIKE @Filter OR s.stock_code LIKE @Filter OR CAST(p.Barcode AS NVARCHAR) LIKE @Filter)";
+                    }
+                    q += " ORDER BY s.stock_id DESC";
+
+                    using (var cmd = new System.Data.SqlClient.SqlCommand(q, conn))
+                    {
+                        if (!string.IsNullOrEmpty(filter)) cmd.Parameters.AddWithValue("@Filter", $"%{filter}%");
+                        using (var da = new System.Data.SqlClient.SqlDataAdapter(cmd))
+                        {
+                            da.Fill(dt);
+                        }
+                    }
+                }
+                dgvStock.DataSource = dt;
+                LocalizeGridHeaders(dgvStock);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError("Error loading stock view", ex);
+            }
         }
         #endregion
 
-        #region View 5: Dashboard Analytics (Mockup 1 Signature Metric Strip & Charts)
+        #region View: Suppliers Directory
+        private void BuildSuppliersView()
+        {
+            pnlViewSuppliers = new Panel { Dock = DockStyle.Fill, Visible = false };
+
+            TableLayoutPanel tlp = new TableLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                ColumnCount = 2,
+                RowCount = 1
+            };
+            tlp.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 65F));
+            tlp.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 35F));
+
+            // Left: Grid Card
+            Panel pnlGridCard = new Panel
+            {
+                Dock = DockStyle.Fill,
+                BackColor = UITheme.CardBg,
+                Padding = new Padding(20)
+            };
+
+            Panel pnlSearch = new Panel { Dock = DockStyle.Top, Height = 50, BackColor = UITheme.CardBg };
+            txtSupplierSearch = new TextBox { Location = new Point(0, 10), Width = 300, Font = UITheme.FontRegular, BackColor = UITheme.InputBg };
+            btnSupplierSearch = new Button
+            {
+                Text = LocalizationManager.T("Search"),
+                Location = new Point(310, 8),
+                Size = new Size(100, 28),
+                FlatStyle = FlatStyle.Flat,
+                BackColor = UITheme.Primary,
+                ForeColor = Color.White,
+                Font = UITheme.FontSmall,
+                Cursor = Cursors.Hand
+            };
+            btnSupplierSearch.FlatAppearance.BorderSize = 0;
+            btnSupplierSearch.Click += (s, e) => LoadSuppliersData(txtSupplierSearch.Text.Trim());
+
+            btnSupplierExport = new Button
+            {
+                Text = LocalizationManager.T("ExportCsv"),
+                Location = new Point(420, 8),
+                Size = new Size(110, 28),
+                FlatStyle = FlatStyle.Flat,
+                BackColor = UITheme.PrimaryLight,
+                ForeColor = UITheme.Primary,
+                Font = UITheme.FontSmall,
+                Cursor = Cursors.Hand
+            };
+            btnSupplierExport.FlatAppearance.BorderSize = 0;
+            btnSupplierExport.Click += (s, e) =>
+            {
+                if (dgvSuppliers.DataSource is DataTable dt)
+                    CsvExportHelper.ExportToCsv(dt, "Suppliers_Directory.csv");
+            };
+
+            pnlSearch.Controls.AddRange(new Control[] { txtSupplierSearch, btnSupplierSearch, btnSupplierExport });
+
+            dgvSuppliers = new DataGridView { Dock = DockStyle.Fill };
+            UITheme.StyleDataGrid(dgvSuppliers);
+            dgvSuppliers.CellClick += (s, e) =>
+            {
+                if (e.RowIndex >= 0)
+                {
+                    var row = dgvSuppliers.Rows[e.RowIndex];
+                    if (row.Cells["SupplierID"].Value != DBNull.Value)
+                    {
+                        selectedSupplierId = Convert.ToInt32(row.Cells["SupplierID"].Value);
+                        txtSupplierName.Text = row.Cells["Supplier Name"].Value?.ToString() ?? "";
+                        txtSupplierContact.Text = row.Cells["Contact Person"].Value?.ToString() ?? "";
+                        txtSupplierPhone.Text = row.Cells["Phone"].Value?.ToString() ?? "";
+                        txtSupplierEmail.Text = row.Cells["Email"].Value?.ToString() ?? "";
+                        txtSupplierAddress.Text = row.Cells["Address"].Value?.ToString() ?? "";
+                    }
+                }
+            };
+
+            pnlGridCard.Controls.Add(dgvSuppliers);
+            pnlGridCard.Controls.Add(pnlSearch);
+
+            // Right: Form Card
+            Panel pnlFormCard = new Panel
+            {
+                Dock = DockStyle.Fill,
+                BackColor = UITheme.CardBg,
+                Padding = new Padding(20),
+                Margin = new Padding(16, 0, 0, 0)
+            };
+
+            lblSupplierFormTitle = new Label { Text = LocalizationManager.T("TitleSuppliers"), Font = UITheme.FontSubtitle, ForeColor = UITheme.TextMain, Dock = DockStyle.Top, Height = 35 };
+
+            Panel pnlFields = new Panel { Dock = DockStyle.Top, Height = 310, BackColor = UITheme.CardBg };
+
+            Label lblName = new Label { Text = LocalizationManager.T("Supplier") + ":", Location = new Point(0, 5), Font = UITheme.FontBold, AutoSize = true };
+            txtSupplierName = new TextBox { Location = new Point(0, 25), Width = 260, BackColor = UITheme.InputBg };
+
+            Label lblContact = new Label { Text = LocalizationManager.T("ContactPerson") + ":", Location = new Point(0, 65), Font = UITheme.FontBold, AutoSize = true };
+            txtSupplierContact = new TextBox { Location = new Point(0, 85), Width = 260, BackColor = UITheme.InputBg };
+
+            Label lblPhone = new Label { Text = LocalizationManager.T("Phone") + ":", Location = new Point(0, 125), Font = UITheme.FontBold, AutoSize = true };
+            txtSupplierPhone = new TextBox { Location = new Point(0, 145), Width = 260, BackColor = UITheme.InputBg };
+
+            Label lblEmail = new Label { Text = LocalizationManager.T("Email") + ":", Location = new Point(0, 185), Font = UITheme.FontBold, AutoSize = true };
+            txtSupplierEmail = new TextBox { Location = new Point(0, 205), Width = 260, BackColor = UITheme.InputBg };
+
+            Label lblAddr = new Label { Text = LocalizationManager.T("Address") + ":", Location = new Point(0, 245), Font = UITheme.FontBold, AutoSize = true };
+            txtSupplierAddress = new TextBox { Location = new Point(0, 265), Width = 260, BackColor = UITheme.InputBg };
+
+            pnlFields.Controls.AddRange(new Control[] { lblName, txtSupplierName, lblContact, txtSupplierContact, lblPhone, txtSupplierPhone, lblEmail, txtSupplierEmail, lblAddr, txtSupplierAddress });
+
+            Panel pnlBtnGroup = new Panel { Dock = DockStyle.Top, Height = 170, BackColor = UITheme.CardBg };
+
+            btnSupplierAdd = new Button { Text = LocalizationManager.T("AddSupplier"), Location = new Point(0, 5), Size = new Size(260, 36), FlatStyle = FlatStyle.Flat, BackColor = UITheme.Primary, ForeColor = Color.White, Font = UITheme.FontBold, Cursor = Cursors.Hand };
+            btnSupplierAdd.FlatAppearance.BorderSize = 0;
+            btnSupplierAdd.Click += (s, e) =>
+            {
+                if (string.IsNullOrWhiteSpace(txtSupplierName.Text))
+                {
+                    MessageBox.Show("Please enter supplier name.", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+                var sup = new Models.SupplierModel
+                {
+                    SupplierName = txtSupplierName.Text.Trim(),
+                    ContactPerson = txtSupplierContact.Text.Trim(),
+                    Phone = txtSupplierPhone.Text.Trim(),
+                    Email = txtSupplierEmail.Text.Trim(),
+                    Address = txtSupplierAddress.Text.Trim()
+                };
+                var repo = new Data.SupplierRepository();
+                if (repo.Add(sup, out string err))
+                {
+                    MessageBox.Show("Supplier added successfully!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    ClearSupplierForm();
+                    LoadSuppliersData();
+                    PopulateStockFormDropdowns();
+                }
+                else
+                {
+                    MessageBox.Show(err, "Notice", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
+            };
+
+            btnSupplierUpdate = new Button { Text = LocalizationManager.T("UpdateSupplier"), Location = new Point(0, 46), Size = new Size(260, 36), FlatStyle = FlatStyle.Flat, BackColor = UITheme.PrimaryLight, ForeColor = UITheme.Primary, Font = UITheme.FontBold, Cursor = Cursors.Hand };
+            btnSupplierUpdate.FlatAppearance.BorderSize = 0;
+            btnSupplierUpdate.Click += (s, e) =>
+            {
+                if (selectedSupplierId <= 0)
+                {
+                    MessageBox.Show("Please select a supplier from the table first.", "Notice", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return;
+                }
+                var sup = new Models.SupplierModel
+                {
+                    SupplierId = selectedSupplierId,
+                    SupplierName = txtSupplierName.Text.Trim(),
+                    ContactPerson = txtSupplierContact.Text.Trim(),
+                    Phone = txtSupplierPhone.Text.Trim(),
+                    Email = txtSupplierEmail.Text.Trim(),
+                    Address = txtSupplierAddress.Text.Trim()
+                };
+                var repo = new Data.SupplierRepository();
+                if (repo.Update(sup, out string err))
+                {
+                    MessageBox.Show("Supplier updated successfully!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    LoadSuppliersData();
+                    PopulateStockFormDropdowns();
+                }
+                else
+                {
+                    MessageBox.Show(err, "Notice", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
+            };
+
+            btnSupplierDelete = new Button { Text = LocalizationManager.T("DeleteSupplier"), Location = new Point(0, 87), Size = new Size(260, 36), FlatStyle = FlatStyle.Flat, BackColor = Color.FromArgb(254, 242, 242), ForeColor = UITheme.Danger, Font = UITheme.FontBold, Cursor = Cursors.Hand };
+            btnSupplierDelete.FlatAppearance.BorderSize = 0;
+            btnSupplierDelete.Click += (s, e) =>
+            {
+                if (selectedSupplierId <= 0) return;
+                if (MessageBox.Show("Are you sure you want to delete this supplier?", "Confirm", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
+                {
+                    var repo = new Data.SupplierRepository();
+                    if (repo.Delete(selectedSupplierId, out string err))
+                    {
+                        ClearSupplierForm();
+                        LoadSuppliersData();
+                        PopulateStockFormDropdowns();
+                    }
+                }
+            };
+
+            btnSupplierClear = new Button { Text = "🔄 Clear", Location = new Point(0, 128), Size = new Size(260, 32), FlatStyle = FlatStyle.Flat, BackColor = Color.FromArgb(241, 245, 249), ForeColor = UITheme.TextMuted, Font = UITheme.FontBold, Cursor = Cursors.Hand };
+            btnSupplierClear.FlatAppearance.BorderSize = 0;
+            btnSupplierClear.Click += (s, e) => ClearSupplierForm();
+
+            pnlBtnGroup.Controls.AddRange(new Control[] { btnSupplierAdd, btnSupplierUpdate, btnSupplierDelete, btnSupplierClear });
+
+            pnlFormCard.Controls.AddRange(new Control[] { pnlBtnGroup, pnlFields, lblSupplierFormTitle });
+
+            tlp.Controls.Add(pnlGridCard, 0, 0);
+            tlp.Controls.Add(pnlFormCard, 1, 0);
+
+            pnlViewSuppliers.Controls.Add(tlp);
+            pnlContentContainer.Controls.Add(pnlViewSuppliers);
+        }
+
+        private void ClearSupplierForm()
+        {
+            selectedSupplierId = -1;
+            txtSupplierName?.Clear();
+            txtSupplierContact?.Clear();
+            txtSupplierPhone?.Clear();
+            txtSupplierEmail?.Clear();
+            txtSupplierAddress?.Clear();
+        }
+
+        private void LoadSuppliersData(string filter = "")
+        {
+            DataTable dt = new DataTable();
+            try
+            {
+                using (var conn = DBHelper.GetConnection())
+                {
+                    conn.Open();
+                    string q = @"SELECT SupplierID, SupplierName AS [Supplier Name], 
+                                        ContactPerson AS [Contact Person], Phone, Email, Address, 
+                                        DateAdded AS [Date Registered]
+                                 FROM Suppliers 
+                                 WHERE IsActive = 1";
+                    if (!string.IsNullOrEmpty(filter))
+                    {
+                        q += " AND (SupplierName LIKE @Filter OR ContactPerson LIKE @Filter OR Phone LIKE @Filter)";
+                    }
+                    q += " ORDER BY SupplierName ASC";
+                    using (var cmd = new System.Data.SqlClient.SqlCommand(q, conn))
+                    {
+                        if (!string.IsNullOrEmpty(filter)) cmd.Parameters.AddWithValue("@Filter", $"%{filter}%");
+                        using (var da = new System.Data.SqlClient.SqlDataAdapter(cmd))
+                        {
+                            da.Fill(dt);
+                        }
+                    }
+                }
+                dgvSuppliers.DataSource = dt;
+                LocalizeGridHeaders(dgvSuppliers);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError("Error loading suppliers", ex);
+            }
+        }
+        #endregion
+
+        #region View 5: Dashboard Analytics & Operational Hub
         private void BuildDashboardView()
         {
             pnlViewDashboard = new Panel { Dock = DockStyle.Fill, Visible = false, AutoScroll = true };
 
-            // Top: 4 Stat Cards (First Card is Vibrant Coral Orange)
+            // Top: 4 Stat Cards
             TableLayoutPanel tlpKpis = new TableLayoutPanel
             {
                 Dock = DockStyle.Top,
@@ -2424,7 +3085,7 @@ namespace Stock_Sync
             lblKpiTitle3 = new Label();
             lblKpiTitle4 = new Label();
 
-            // Card 1: Solid Vibrant Coral (Mockup 1 Highlight Card)
+            // Card 1: Vibrant Coral Highlight Card
             Panel pnlSalesCoralCard = new Panel
             {
                 Dock = DockStyle.Fill,
@@ -2453,14 +3114,44 @@ namespace Stock_Sync
 
             pnlViewDashboard.Controls.Add(tlpKpis);
 
-            // Bottom: Charts
-            TableLayoutPanel tlpCharts = new TableLayoutPanel
+            // Middle: Interactive Dashboard Sub-navigation Tabs (Pill style)
+            Panel pnlDashTabBar = new Panel
             {
                 Dock = DockStyle.Top,
-                Height = 460,
+                Height = 44,
+                BackColor = UITheme.AppBg,
+                Padding = new Padding(0, 6, 0, 6)
+            };
+
+            btnDashTabCharts = CreateDashTabButton(LocalizationManager.T("TabCharts"), "charts");
+            btnDashTabRestock = CreateDashTabButton(LocalizationManager.T("TabRestockAlerts"), "restock");
+            btnDashTabOrders = CreateDashTabButton(LocalizationManager.T("TabRecentOrders"), "orders");
+            btnDashTabExpiry = CreateDashTabButton(LocalizationManager.T("TabExpiryAlerts"), "expiry");
+            btnDashTabShifts = CreateDashTabButton(LocalizationManager.T("TabCashierShifts"), "shifts");
+
+            pnlDashTabBar.Controls.Add(btnDashTabShifts);
+            pnlDashTabBar.Controls.Add(btnDashTabExpiry);
+            pnlDashTabBar.Controls.Add(btnDashTabOrders);
+            pnlDashTabBar.Controls.Add(btnDashTabRestock);
+            pnlDashTabBar.Controls.Add(btnDashTabCharts);
+
+            pnlViewDashboard.Controls.Add(pnlDashTabBar);
+
+            // Bottom: Tab Content Container
+            pnlDashTabContent = new Panel
+            {
+                Dock = DockStyle.Fill,
+                BackColor = UITheme.AppBg,
+                Padding = new Padding(0, 10, 0, 0)
+            };
+
+            // 1. Charts Tab
+            pnlDashCharts = new Panel { Dock = DockStyle.Fill, Visible = true, BackColor = UITheme.AppBg };
+            TableLayoutPanel tlpCharts = new TableLayoutPanel
+            {
+                Dock = DockStyle.Fill,
                 ColumnCount = 2,
-                RowCount = 1,
-                Margin = new Padding(0, 16, 0, 0)
+                RowCount = 1
             };
             tlpCharts.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
             tlpCharts.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
@@ -2473,9 +3164,159 @@ namespace Stock_Sync
 
             tlpCharts.Controls.Add(chartDailySales, 0, 0);
             tlpCharts.Controls.Add(chartTopSold, 1, 0);
+            pnlDashCharts.Controls.Add(tlpCharts);
 
-            pnlViewDashboard.Controls.Add(tlpCharts);
+            // 2. Restock Alerts Tab
+            pnlDashRestock = new Panel { Dock = DockStyle.Fill, Visible = false, BackColor = UITheme.CardBg, Padding = new Padding(16) };
+            Panel pnlRestockTop = new Panel { Dock = DockStyle.Top, Height = 40, BackColor = UITheme.CardBg };
+            Label lblRestockHead = new Label { Text = "Products Needing Immediate Restocking (0 Remaining or Low Stock)", Font = UITheme.FontBold, ForeColor = UITheme.Danger, Location = new Point(0, 10), AutoSize = true };
+            Button btnFastRestock = new Button
+            {
+                Text = "➕ " + LocalizationManager.T("RestockNow"),
+                Size = new Size(130, 30),
+                Location = new Point(pnlDashRestock.Width - 145, 5),
+                Anchor = AnchorStyles.Top | AnchorStyles.Right,
+                FlatStyle = FlatStyle.Flat,
+                BackColor = UITheme.Primary,
+                ForeColor = Color.White,
+                Font = UITheme.FontBold,
+                Cursor = Cursors.Hand
+            };
+            btnFastRestock.FlatAppearance.BorderSize = 0;
+            btnFastRestock.Click += (s, e) => TriggerFastRestockFromGrid();
+            pnlRestockTop.Controls.Add(lblRestockHead);
+            pnlRestockTop.Controls.Add(btnFastRestock);
+
+            dgvDashRestock = new DataGridView { Dock = DockStyle.Fill };
+            UITheme.StyleDataGrid(dgvDashRestock);
+            pnlDashRestock.Controls.Add(dgvDashRestock);
+            pnlDashRestock.Controls.Add(pnlRestockTop);
+
+            // 3. Recent Orders Tab
+            pnlDashOrders = new Panel { Dock = DockStyle.Fill, Visible = false, BackColor = UITheme.CardBg, Padding = new Padding(16) };
+            Panel pnlOrdersTop = new Panel { Dock = DockStyle.Top, Height = 40, BackColor = UITheme.CardBg };
+            Label lblOrdersHead = new Label { Text = "Recently Completed Customer Transactions", Font = UITheme.FontBold, ForeColor = UITheme.TextMain, Location = new Point(0, 10), AutoSize = true };
+            pnlOrdersTop.Controls.Add(lblOrdersHead);
+
+            dgvDashOrders = new DataGridView { Dock = DockStyle.Fill };
+            UITheme.StyleDataGrid(dgvDashOrders);
+            pnlDashOrders.Controls.Add(dgvDashOrders);
+            pnlDashOrders.Controls.Add(pnlOrdersTop);
+
+            // 4. Expiring Batches Tab
+            pnlDashExpiry = new Panel { Dock = DockStyle.Fill, Visible = false, BackColor = UITheme.CardBg, Padding = new Padding(16) };
+            Panel pnlExpiryTop = new Panel { Dock = DockStyle.Top, Height = 40, BackColor = UITheme.CardBg };
+            Label lblExpiryHead = new Label { Text = "Batches Expired or Expiring Within 14 Days", Font = UITheme.FontBold, ForeColor = UITheme.Danger, Location = new Point(0, 10), AutoSize = true };
+            pnlExpiryTop.Controls.Add(lblExpiryHead);
+
+            dgvDashExpiry = new DataGridView { Dock = DockStyle.Fill };
+            UITheme.StyleDataGrid(dgvDashExpiry);
+            pnlDashExpiry.Controls.Add(dgvDashExpiry);
+            pnlDashExpiry.Controls.Add(pnlExpiryTop);
+
+            // 5. Staff Shifts Tab
+            pnlDashShifts = new Panel { Dock = DockStyle.Fill, Visible = false, BackColor = UITheme.CardBg, Padding = new Padding(16) };
+            Panel pnlShiftsTop = new Panel { Dock = DockStyle.Top, Height = 40, BackColor = UITheme.CardBg };
+            Label lblShiftsHead = new Label { Text = "Cashier Staff Shift Log & Sales Accountability", Font = UITheme.FontBold, ForeColor = UITheme.TextMain, Location = new Point(0, 10), AutoSize = true };
+            pnlShiftsTop.Controls.Add(lblShiftsHead);
+
+            dgvDashShifts = new DataGridView { Dock = DockStyle.Fill };
+            UITheme.StyleDataGrid(dgvDashShifts);
+            pnlDashShifts.Controls.Add(dgvDashShifts);
+            pnlDashShifts.Controls.Add(pnlShiftsTop);
+
+            pnlDashTabContent.Controls.Add(pnlDashShifts);
+            pnlDashTabContent.Controls.Add(pnlDashExpiry);
+            pnlDashTabContent.Controls.Add(pnlDashOrders);
+            pnlDashTabContent.Controls.Add(pnlDashRestock);
+            pnlDashTabContent.Controls.Add(pnlDashCharts);
+
+            pnlViewDashboard.Controls.Add(pnlDashTabContent);
             pnlContentContainer.Controls.Add(pnlViewDashboard);
+
+            // Select charts tab initially
+            SwitchDashTab("charts");
+        }
+
+        private Button CreateDashTabButton(string text, string tabKey)
+        {
+            Button btn = new Button
+            {
+                Text = text,
+                Dock = DockStyle.Left,
+                Width = 145,
+                FlatStyle = FlatStyle.Flat,
+                BackColor = Color.White,
+                ForeColor = UITheme.SidebarText,
+                Font = UITheme.FontRegular,
+                Cursor = Cursors.Hand,
+                Margin = new Padding(0, 0, 8, 0)
+            };
+            btn.FlatAppearance.BorderSize = 0;
+            btn.Click += (s, e) => SwitchDashTab(tabKey);
+            dashTabButtons.Add(btn);
+            return btn;
+        }
+
+        private void SwitchDashTab(string tabKey)
+        {
+            pnlDashCharts.Visible = (tabKey == "charts");
+            pnlDashRestock.Visible = (tabKey == "restock");
+            pnlDashOrders.Visible = (tabKey == "orders");
+            pnlDashExpiry.Visible = (tabKey == "expiry");
+            pnlDashShifts.Visible = (tabKey == "shifts");
+
+            foreach (var b in dashTabButtons)
+            {
+                b.BackColor = Color.White;
+                b.ForeColor = UITheme.SidebarText;
+                b.Font = UITheme.FontRegular;
+            }
+
+            Button active = null;
+            if (tabKey == "charts") active = btnDashTabCharts;
+            else if (tabKey == "restock") active = btnDashTabRestock;
+            else if (tabKey == "orders") active = btnDashTabOrders;
+            else if (tabKey == "expiry") active = btnDashTabExpiry;
+            else if (tabKey == "shifts") active = btnDashTabShifts;
+
+            if (active != null)
+            {
+                active.BackColor = UITheme.PrimaryLight;
+                active.ForeColor = UITheme.Primary;
+                active.Font = UITheme.FontBold;
+            }
+        }
+
+        private void TriggerFastRestockFromGrid()
+        {
+            if (dgvDashRestock?.CurrentRow != null && dgvDashRestock.CurrentRow.Index >= 0)
+            {
+                var row = dgvDashRestock.CurrentRow;
+                long barcode = Convert.ToInt64(row.Cells["Barcode"].Value);
+                string prodName = row.Cells["Product Name"].Value.ToString();
+
+                string input = PromptInput($"Enter units to restock for '{prodName}':", "Restock Product", "50");
+                if (!string.IsNullOrEmpty(input) && int.TryParse(input, out int addQty) && addQty > 0)
+                {
+                    var inv = new Services.InventoryService();
+                    if (inv.RecordRestock(barcode, addQty, $"RESTOCK-{DateTime.Now:yyyyMMdd}", Session.Username, out string err))
+                    {
+                        MessageBox.Show($"Successfully restocked +{addQty} units for '{prodName}'!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        LoadDashboardData();
+                        LoadStockData();
+                        LoadProductsData();
+                    }
+                    else
+                    {
+                        MessageBox.Show(err, "Restock Failed", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    }
+                }
+            }
+            else
+            {
+                MessageBox.Show("Please select a product from the table first.", "Notice", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
         }
 
         private Panel CreateKpiCard(string title, string initialValue, Label valueLabel, Label titleLabel, Color accent)
@@ -2519,27 +3360,152 @@ namespace Stock_Sync
             lblKpiActiveProducts.Text = kpis.TotalProducts.ToString();
             lblKpiLowStock.Text = kpis.LowStockItems.ToString();
 
-            // Populate Charts
-            Chart chartLogic = new Chart();
-            var dailySales = chartLogic.GetDailySales();
-            chartDailySales.Series.Clear();
-            var s1 = chartDailySales.Series.Add("Daily Sales");
-            s1.ChartType = SeriesChartType.Column;
-            s1.Color = UITheme.Primary; // Coral Orange Columns
-            foreach (var kvp in dailySales)
+            // 1. Populate Charts
+            try
             {
-                s1.Points.AddXY(kvp.Key.ToString("MM-dd"), kvp.Value);
+                Chart chartLogic = new Chart();
+                var dailySales = chartLogic.GetDailySales();
+                chartDailySales.Series.Clear();
+                var s1 = chartDailySales.Series.Add("Daily Sales");
+                s1.ChartType = SeriesChartType.Column;
+                s1.Color = UITheme.Primary;
+                foreach (var kvp in dailySales)
+                {
+                    s1.Points.AddXY(kvp.Key.ToString("MM-dd"), kvp.Value);
+                }
+
+                var topSold = chartLogic.GetTop7SoldProducts();
+                chartTopSold.Series.Clear();
+                var s2 = chartTopSold.Series.Add("Top Sold");
+                s2.ChartType = SeriesChartType.Bar;
+                s2.Color = UITheme.Success;
+                foreach (var kvp in topSold)
+                {
+                    s2.Points.AddXY(kvp.Key, kvp.Value);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError("Error rendering dashboard charts", ex);
             }
 
-            var topSold = chartLogic.GetTop7SoldProducts();
-            chartTopSold.Series.Clear();
-            var s2 = chartTopSold.Series.Add("Top Sold");
-            s2.ChartType = SeriesChartType.Bar;
-            s2.Color = UITheme.Success;
-            foreach (var kvp in topSold)
+            // 2. Populate Restock Alerts Tab
+            try
             {
-                s2.Points.AddXY(kvp.Key, kvp.Value);
+                DataTable dtRestock = new DataTable();
+                using (var conn = DBHelper.GetConnection())
+                {
+                    conn.Open();
+                    string q = @"
+                    SELECT 
+                        p.Barcode, 
+                        p.PName AS [Product Name], 
+                        ISNULL(p.Category, 'Uncategorized') AS [Category],
+                        ISNULL(SUM(s.quantity), 0) AS [Available Qty],
+                        ISNULL(MAX(s.minimum_stock), 5) AS [Min Stock],
+                        ISNULL(MAX(s.sp_unit), 0.00) AS [Price],
+                        CASE WHEN ISNULL(SUM(s.quantity), 0) = 0 THEN 'OUT OF STOCK' ELSE 'LOW STOCK' END AS [Status]
+                    FROM Products p
+                    LEFT JOIN Stocks s ON p.ID = s.barcode_id AND s.IsActive = 1
+                    WHERE p.IsActive = 1
+                    GROUP BY p.Barcode, p.PName, p.Category
+                    HAVING ISNULL(SUM(s.quantity), 0) <= ISNULL(MAX(s.minimum_stock), 5)
+                    ORDER BY [Available Qty] ASC, p.PName ASC";
+                    using (var da = new System.Data.SqlClient.SqlDataAdapter(q, conn))
+                    {
+                        da.Fill(dtRestock);
+                    }
+                }
+                dgvDashRestock.DataSource = dtRestock;
+                LocalizeGridHeaders(dgvDashRestock);
             }
+            catch (Exception ex) { Logger.LogError("Error loading restock tab", ex); }
+
+            // 3. Populate Recent Orders Tab
+            try
+            {
+                DataTable dtOrders = new DataTable();
+                using (var conn = DBHelper.GetConnection())
+                {
+                    conn.Open();
+                    string q = @"
+                    SELECT TOP 15
+                        o.OrderID AS [Order #],
+                        CONVERT(VARCHAR(19), o.OrderTime, 120) AS [Date & Time],
+                        ISNULL(o.CashierName, 'Cashier') AS [Cashier],
+                        o.TotalPayable AS [Total Amount (ETB)],
+                        o.PaymentMethod AS [Payment Method]
+                    FROM Orders o
+                    ORDER BY o.OrderID DESC";
+                    using (var da = new System.Data.SqlClient.SqlDataAdapter(q, conn))
+                    {
+                        da.Fill(dtOrders);
+                    }
+                }
+                dgvDashOrders.DataSource = dtOrders;
+                LocalizeGridHeaders(dgvDashOrders);
+            }
+            catch (Exception ex) { Logger.LogError("Error loading recent orders tab", ex); }
+
+            // 4. Populate Expiring Batches Tab
+            try
+            {
+                DataTable dtExpiry = new DataTable();
+                using (var conn = DBHelper.GetConnection())
+                {
+                    conn.Open();
+                    string q = @"
+                    SELECT TOP 20
+                        s.stock_code AS [Batch Code],
+                        p.PName AS [Product Name],
+                        p.Barcode,
+                        s.quantity AS [Quantity],
+                        CONVERT(VARCHAR(10), s.expiry_date, 120) AS [Expiry Date],
+                        DATEDIFF(day, GETDATE(), s.expiry_date) AS [Days Left],
+                        CASE WHEN s.expiry_date <= CAST(GETDATE() AS DATE) THEN 'EXPIRED' ELSE 'EXPIRING SOON' END AS [Status]
+                    FROM Stocks s
+                    INNER JOIN Products p ON s.barcode_id = p.ID
+                    WHERE s.IsActive = 1 AND p.IsActive = 1 AND s.expiry_date IS NOT NULL 
+                      AND s.expiry_date <= DATEADD(day, 14, CAST(GETDATE() AS DATE))
+                    ORDER BY s.expiry_date ASC";
+                    using (var da = new System.Data.SqlClient.SqlDataAdapter(q, conn))
+                    {
+                        da.Fill(dtExpiry);
+                    }
+                }
+                dgvDashExpiry.DataSource = dtExpiry;
+                LocalizeGridHeaders(dgvDashExpiry);
+            }
+            catch (Exception ex) { Logger.LogError("Error loading expiry tab", ex); }
+
+            // 5. Populate Shifts Tab
+            try
+            {
+                DataTable dtShifts = new DataTable();
+                using (var conn = DBHelper.GetConnection())
+                {
+                    conn.Open();
+                    string q = @"
+                    SELECT TOP 20
+                        ShiftID AS [Shift #],
+                        Username AS [Cashier],
+                        Role,
+                        CONVERT(VARCHAR(19), ShiftStart, 120) AS [Shift Started],
+                        ISNULL(CONVERT(VARCHAR(19), ShiftEnd, 120), 'In Progress') AS [Shift Ended],
+                        TotalSalesCount AS [Orders Processed],
+                        TotalSalesAmount AS [Revenue (ETB)],
+                        Status
+                    FROM StaffShifts
+                    ORDER BY ShiftID DESC";
+                    using (var da = new System.Data.SqlClient.SqlDataAdapter(q, conn))
+                    {
+                        da.Fill(dtShifts);
+                    }
+                }
+                dgvDashShifts.DataSource = dtShifts;
+                LocalizeGridHeaders(dgvDashShifts);
+            }
+            catch (Exception ex) { Logger.LogError("Error loading shifts tab", ex); }
         }
         #endregion
 
