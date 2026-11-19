@@ -59,6 +59,19 @@
     <Compile Include="MobileServer.cs" />
     <Compile Include="ShiftManager.cs" />
     <Compile Include="StaffUserManager.cs" />
+    <Compile Include="Models\ProductModel.cs" />
+    <Compile Include="Models\StockBatchModel.cs" />
+    <Compile Include="Models\SupplierModel.cs" />
+    <Compile Include="Models\StockMovementModel.cs" />
+    <Compile Include="Data\IProductRepository.cs" />
+    <Compile Include="Data\ProductRepository.cs" />
+    <Compile Include="Data\IStockRepository.cs" />
+    <Compile Include="Data\StockRepository.cs" />
+    <Compile Include="Data\ISupplierRepository.cs" />
+    <Compile Include="Data\SupplierRepository.cs" />
+    <Compile Include="Data\IStockMovementRepository.cs" />
+    <Compile Include="Data\StockMovementRepository.cs" />
+    <Compile Include="Services\InventoryService.cs" />
     <Compile Include="Bill.cs" />
     <Compile Include="BillForm.cs">
       <SubType>Form</SubType>

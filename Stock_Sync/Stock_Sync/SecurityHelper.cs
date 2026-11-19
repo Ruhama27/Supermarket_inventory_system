@@ -7,7 +7,7 @@ namespace Stock_Sync
     {
         private const int SaltSize = 16;       // 128 bit
         private const int KeySize = 32;        // 256 bit
-        private const int Iterations = 10000;  // PBKDF2 iterations
+        public const int Iterations = 50000;   // Modern PBKDF2 iterations work factor (OWASP recommendation)
 
         /// <summary>
         /// Hashes a plaintext password using PBKDF2 with SHA-1/SHA-256 and a cryptographically secure random salt.
@@ -57,7 +57,12 @@ namespace Stock_Sync
                 using (var pbkdf2 = new Rfc2898DeriveBytes(password, salt, iterations))
                 {
                     byte[] actualKey = pbkdf2.GetBytes(expectedKey.Length);
-                    return SlowEquals(expectedKey, actualKey);
+                    bool isMatch = SlowEquals(expectedKey, actualKey);
+                    if (isMatch && iterations < Iterations)
+                    {
+                        needsUpgrade = true; // Auto-upgrade older work factor to current standard
+                    }
+                    return isMatch;
                 }
             }
 

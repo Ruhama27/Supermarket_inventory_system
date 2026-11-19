@@ -11,8 +11,8 @@ namespace Stock_Sync
         private string stock_code;
         private int quantity;
         private int minimum_stock;
-        private double cp_uint;
-        private double sp_unit;
+        private decimal cp_uint;
+        private decimal sp_unit;
         private DateTime arrival_date;
         private DateTime? expiry_date;
 
@@ -41,13 +41,13 @@ namespace Stock_Sync
             set { minimum_stock = value; }
         }
 
-        public double Cp_unit
+        public decimal Cp_unit
         {
             get { return cp_uint; }
             set { cp_uint = value; }
         }
 
-        public double Sp_unit
+        public decimal Sp_unit
         {
             get { return sp_unit; }
             set { sp_unit = value; }
@@ -175,8 +175,8 @@ namespace Stock_Sync
                                 stock_code = reader["stock_code"].ToString();
                                 quantity = Convert.ToInt32(reader["quantity"]);
                                 minimum_stock = Convert.ToInt32(reader["minimum_stock"]);
-                                cp_uint = Convert.ToDouble(reader["cp_unit"]);
-                                sp_unit = Convert.ToDouble(reader["sp_unit"]);
+                                cp_uint = Convert.ToDecimal(reader["cp_unit"]);
+                                sp_unit = Convert.ToDecimal(reader["sp_unit"]);
                                 arrival_date = Convert.ToDateTime(reader["arrival_date"]);
                                 if (reader["expiry_date"] != DBNull.Value)
                                 {

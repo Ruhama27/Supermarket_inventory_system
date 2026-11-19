@@ -110,8 +110,8 @@ namespace Stock_Sync
             stock.Stock_code = code.Text.Trim();
             stock.Quantity = int.Parse(quantity.Text);
             stock.Minimum_stock = int.Parse(textBox1.Text);
-            stock.Cp_unit = double.Parse(textBox3.Text);
-            stock.Sp_unit = double.Parse(textBox5.Text);
+            stock.Cp_unit = decimal.Parse(textBox3.Text);
+            stock.Sp_unit = decimal.Parse(textBox5.Text);
             stock.Arrival_date = dateTimePicker1.Value;
 
             if (dateTimePicker2.Checked)
@@ -197,8 +197,8 @@ namespace Stock_Sync
             stock.Stock_code = code.Text.Trim();
             stock.Quantity = int.Parse(quantity.Text);
             stock.Minimum_stock = int.Parse(textBox1.Text);
-            stock.Cp_unit = double.Parse(textBox3.Text);
-            stock.Sp_unit = double.Parse(textBox5.Text);
+            stock.Cp_unit = decimal.Parse(textBox3.Text);
+            stock.Sp_unit = decimal.Parse(textBox5.Text);
             stock.Arrival_date = dateTimePicker1.Value;
 
             if (dateTimePicker2.Checked)

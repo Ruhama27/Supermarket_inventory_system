@@ -2357,7 +2357,7 @@ namespace Stock_Sync
             btnStockAdd.FlatAppearance.BorderSize = 0;
             btnStockAdd.Click += (s, e) =>
             {
-                if (int.TryParse(txtStockProdId.Text, out int pid) && int.TryParse(txtStockQty.Text, out int qty) && double.TryParse(txtStockSp.Text, out double sp))
+                if (int.TryParse(txtStockProdId.Text, out int pid) && int.TryParse(txtStockQty.Text, out int qty) && decimal.TryParse(txtStockSp.Text, out decimal sp))
                 {
                     Stock st = new Stock
                     {
@@ -2365,7 +2365,7 @@ namespace Stock_Sync
                         Stock_code = txtStockCode.Text.Trim(),
                         Quantity = qty,
                         Minimum_stock = int.TryParse(txtStockMin.Text, out int min) ? min : 5,
-                        Cp_unit = double.TryParse(txtStockCp.Text, out double cp) ? cp : 0.0,
+                        Cp_unit = decimal.TryParse(txtStockCp.Text, out decimal cp) ? cp : 0.0m,
                         Sp_unit = sp,
                         Arrival_date = dtpStockArrival.Value,
                         Expirey_Date = chkStockHasExpiry.Checked ? (DateTime?)dtpStockExpiry.Value : null
