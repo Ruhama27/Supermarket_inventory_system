@@ -165,9 +165,7 @@ namespace Stock_Sync
             { "MinThreshold", "Min Threshold:" },
             { "CostPrice", "Cost Price (Birr):" },
             { "SellingPrice", "Selling Price (Birr):" },
-            { "ArrivalDate", "Arrival Date:" },
             { "HasExpiryDate", "Has Expiry Date:" },
-            { "SaveStockBatch", "Save Stock Batch" },
 
             // Dashboard KPIs
             { "KpiTodaySales", "Today's Sales" },
@@ -331,9 +329,7 @@ namespace Stock_Sync
             { "MinThreshold", "ዝቅተኛ ገደብ:" },
             { "CostPrice", "የግዢ ዋጋ (ብር):" },
             { "SellingPrice", "የመሸጫ ዋጋ (ብር):" },
-            { "ArrivalDate", "የደረሰበት ቀን:" },
             { "HasExpiryDate", "የሚያበቃበት ቀን አለው:" },
-            { "SaveStockBatch", "ክምችቱን መዝግብ" },
 
             // Dashboard KPIs
             { "KpiTodaySales", "የዛሬ ሽያጭ" },
